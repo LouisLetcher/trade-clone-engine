@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
 
 from loguru import logger
 from solana.rpc.api import Client
@@ -17,11 +16,11 @@ class SolanaWatcher:
     client: Client
 
     @classmethod
-    def create(cls, settings: AppSettings) -> "SolanaWatcher":
+    def create(cls, settings: AppSettings) -> SolanaWatcher:
         client = Client(settings.sol_rpc_url)
         return cls(settings=settings, client=client)
 
-    def wallets(self) -> List[str]:
+    def wallets(self) -> list[str]:
         return self.settings.wallets_to_follow(chain="solana")
 
     def run(self, SessionFactory):
@@ -104,8 +103,8 @@ class SolanaWatcher:
             subs = []
             errors = []
             try:
-                from solders.rpc.config import RpcTransactionLogsFilterMentions  # type: ignore
                 from solders.pubkey import Pubkey as SPubkey  # type: ignore
+                from solders.rpc.config import RpcTransactionLogsFilterMentions  # type: ignore
 
                 for w in wallets:
                     try:

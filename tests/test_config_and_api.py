@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 
 from fastapi.testclient import TestClient
 
@@ -45,7 +43,14 @@ def test_api_endpoints_with_sqlite(tmp_path, monkeypatch):
 
     # Import after setting env so the module picks it up
     from services.api.main import app, settings
-    from trade_clone_engine.db import Base, make_engine, make_session_factory, ObservedTrade, ExecutedTrade, session_scope
+    from trade_clone_engine.db import (
+        Base,
+        ExecutedTrade,
+        ObservedTrade,
+        make_engine,
+        make_session_factory,
+        session_scope,
+    )
 
     engine = make_engine(settings.database_url)
     Base.metadata.create_all(engine)
@@ -92,4 +97,3 @@ def test_api_endpoints_with_sqlite(tmp_path, monkeypatch):
     assert isinstance(r.json(), list)
     r = client.get("/dashboard")
     assert r.status_code in (200, 404)  # 200 if static is included in test env
-

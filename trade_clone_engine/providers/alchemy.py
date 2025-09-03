@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import requests
-from typing import Optional
 
 
-def trace_native_received(alchemy_rpc_url: str, tx_hash: str, to_address: str) -> Optional[int]:
+def trace_native_received(alchemy_rpc_url: str, tx_hash: str, to_address: str) -> int | None:
     """
     Uses trace_transaction to find internal value transfers to `to_address` for a given tx.
     Returns the total wei received as a positive int if found.
@@ -18,7 +17,6 @@ def trace_native_received(alchemy_rpc_url: str, tx_hash: str, to_address: str) -
         total = 0
         for tr in traces:
             act = tr.get("action", {})
-            typ = act.get("callType") or tr.get("type")
             to = (act.get("to") or "").lower()
             val_hex = act.get("value") or "0x0"
             if to == want and val_hex:
@@ -26,4 +24,3 @@ def trace_native_received(alchemy_rpc_url: str, tx_hash: str, to_address: str) -
         return total if total > 0 else None
     except Exception:
         return None
-

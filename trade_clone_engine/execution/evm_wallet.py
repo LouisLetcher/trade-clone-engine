@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
+from eth_account import Account
 from loguru import logger
 from web3 import Web3
-from eth_account import Account
 
 
 def _load_abi(rel_path: str):
@@ -23,11 +22,11 @@ UNI_V2_ABI = _load_abi("uniswap_v2_router.json")
 class EvmWallet:
     w3: Web3
     chain_id: int
-    private_key: Optional[str]
-    address: Optional[str]
+    private_key: str | None
+    address: str | None
 
     @classmethod
-    def create(cls, rpc_url: str, chain_id: int, private_key: Optional[str], explicit_address: Optional[str]):
+    def create(cls, rpc_url: str, chain_id: int, private_key: str | None, explicit_address: str | None):
         w3 = Web3(Web3.WebsocketProvider(rpc_url) if rpc_url.startswith("ws") else Web3(Web3.HTTPProvider(rpc_url)))
         addr = explicit_address
         if private_key and not addr:
@@ -61,4 +60,3 @@ class EvmWallet:
         signed = self.w3.eth.account.sign_transaction(tx, self.private_key)
         tx_hash = self.w3.eth.send_raw_transaction(signed.rawTransaction)
         return tx_hash.hex()
-

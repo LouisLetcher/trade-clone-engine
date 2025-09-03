@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from loguru import logger
 
-
-WalletRec = Dict[str, Any]
+WalletRec = dict[str, Any]
 
 
 @dataclass
 class DuneSource:
     api_key: str
     base_url: str = "https://api.dune.com/api/v1"
-    query_id: Optional[int] = None
+    query_id: int | None = None
 
-    def top_wallets(self, limit: int = 100) -> List[WalletRec]:
+    def top_wallets(self, limit: int = 100) -> list[WalletRec]:
         if not self.query_id:
             logger.warning("DuneSource: query_id not set; skipping")
             return []
@@ -29,7 +27,7 @@ class DuneSource:
             return []
         data = r.json() or {}
         rows = data.get("result", {}).get("rows", [])
-        out: List[WalletRec] = []
+        out: list[WalletRec] = []
         for row in rows[:limit]:
             raw = (row.get("wallet") or row.get("address") or "")
             addr = raw.lower() if raw.startswith("0x") else raw
@@ -52,7 +50,7 @@ class BirdeyeSource:
     api_key: str
     base_url: str = "https://public-api.birdeye.so"
 
-    def top_wallets(self, limit: int = 100) -> List[WalletRec]:
+    def top_wallets(self, limit: int = 100) -> list[WalletRec]:
         # Placeholder: Birdeye may not expose direct top traders; this is a scaffold.
         headers = {"x-api-key": self.api_key, "accept": "application/json"}
         url = f"{self.base_url}/defi/wallet/ranking"
@@ -62,7 +60,7 @@ class BirdeyeSource:
                 logger.warning("Birdeye error: {}", r.text)
                 return []
             rows = r.json().get("data", [])
-            out: List[WalletRec] = []
+            out: list[WalletRec] = []
             for row in rows[:limit]:
                 raw = (row.get("address") or "")
                 addr = raw.lower() if raw.startswith("0x") else raw
@@ -85,10 +83,10 @@ class BirdeyeSource:
 
 @dataclass
 class GMGNSource:
-    api_key: Optional[str] = None
+    api_key: str | None = None
     base_url: str = "https://gmgn.ai/api"
 
-    def top_wallets(self, limit: int = 100) -> List[WalletRec]:
+    def top_wallets(self, limit: int = 100) -> list[WalletRec]:
         # Placeholder implementation; endpoint depends on GMGN plan.
         try:
             r = requests.get(f"{self.base_url}/solana/traders/top", timeout=20)
@@ -96,7 +94,7 @@ class GMGNSource:
                 logger.warning("GMGN error: {}", r.text)
                 return []
             rows = r.json().get("data", [])
-            out: List[WalletRec] = []
+            out: list[WalletRec] = []
             for row in rows[:limit]:
                 raw = (row.get("address") or "")
                 addr = raw.lower() if raw.startswith("0x") else raw
@@ -123,7 +121,7 @@ class NansenSource:
     base_url: str = "https://api.nansen.ai"
     endpoint_path: str = "smart-money/top-traders"
 
-    def _extract_addresses_generic(self, obj: Any) -> List[str]:
+    def _extract_addresses_generic(self, obj: Any) -> list[str]:
         addrs: set[str] = set()
         address_like_keys = {
             "address",
@@ -163,7 +161,7 @@ class NansenSource:
         walk(obj)
         return list(addrs)
 
-    def top_wallets(self, limit: int = 100) -> List[WalletRec]:
+    def top_wallets(self, limit: int = 100) -> list[WalletRec]:
         headers = {"Authorization": f"Bearer {self.api_key}", "accept": "application/json"}
         try:
             base = (self.base_url or "https://api.nansen.ai").rstrip("/")
@@ -174,7 +172,7 @@ class NansenSource:
                 logger.warning("Nansen error: {} => {}", url, r.text)
                 return []
             payload = r.json() or {}
-            out: List[WalletRec] = []
+            out: list[WalletRec] = []
 
             # Try structured rows first
             rows = payload.get("data") or payload.get("items") or payload.get("results") or []
@@ -236,7 +234,7 @@ class NansenSource:
 # Arkham removed: no public API available yet for this purpose.
 
 
-def rank_wallets(candidates: List[WalletRec], min_trades: int = 10, top_percent: float = 1.0) -> List[WalletRec]:
+def rank_wallets(candidates: list[WalletRec], min_trades: int = 10, top_percent: float = 1.0) -> list[WalletRec]:
     # Filter and rank by pnl_usd then win_rate
     filt = [w for w in candidates if int(w.get("trades", 0)) >= min_trades]
     filt.sort(key=lambda w: (float(w.get("pnl_usd", 0.0)), float(w.get("win_rate", 0.0))), reverse=True)

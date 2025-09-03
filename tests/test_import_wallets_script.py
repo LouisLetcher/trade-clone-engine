@@ -33,4 +33,3 @@ def test_import_wallets_parse_and_upsert(tmp_path):
     sol = next(w for w in out["wallets"] if not w["address"].startswith("0x"))
     assert evm["address"] == "0xabcdef0123456789abcdef0123456789abcdef01"
     assert sol["address"] == "9xQeWvG816bUx9EPm2Tbd2Ykqg3k9uADuZbL9g1z3Q2E"
-

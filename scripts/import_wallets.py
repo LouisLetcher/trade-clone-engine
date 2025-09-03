@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import yaml
 
@@ -63,10 +63,7 @@ def main() -> int:
     args = p.parse_args()
 
     # Load input
-    if args.input:
-        raw = Path(args.input).read_text()
-    else:
-        raw = sys.stdin.read()
+    raw = Path(args.input).read_text() if args.input else sys.stdin.read()
 
     try:
         payload = json.loads(raw)
@@ -82,7 +79,7 @@ def main() -> int:
     data = load_wallets_yaml(path)
     wallets: list[dict] = data.get("wallets", [])
     if args.prune_others:
-        wallets = [w for w in wallets if str((w.get("chain") or "")).lower() == args.chain.lower()]
+        wallets = [w for w in wallets if str(w.get("chain") or "").lower() == args.chain.lower()]
 
     defaults = {
         "notes": "imported via MCP",
@@ -104,4 +101,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

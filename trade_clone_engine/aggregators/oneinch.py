@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import requests
-from typing import Optional
 
 
 def get_swap_quote(
@@ -12,7 +11,7 @@ def get_swap_quote(
     amount_in: int,
     from_address: str,
     slippage_bps: int,
-    api_key: Optional[str] = None,
+    api_key: str | None = None,
 ):
     slippage = max(0.0, slippage_bps / 100.0)
     url = f"{base_url}/{chain_id}/swap"
@@ -41,4 +40,3 @@ def get_swap_quote(
         "allowanceTarget": spender,
         "buyAmount": to_token_amount,
     }
-

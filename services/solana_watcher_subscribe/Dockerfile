@@ -16,4 +16,3 @@ RUN pip install --upgrade pip && pip install -e .
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python", "services/solana_watcher_subscribe/main.py"]
-

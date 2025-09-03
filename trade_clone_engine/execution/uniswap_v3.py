@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from loguru import logger
 
@@ -43,4 +42,3 @@ def build_exact_input_single(router_contract, p: V3SinglePlan):
         0,  # sqrtPriceLimitX96
     )
     return router_contract.functions.exactInputSingle(params).build_transaction({"value": int(p.value)})
-

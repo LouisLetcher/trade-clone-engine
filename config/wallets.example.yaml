@@ -9,7 +9,7 @@ wallets:
     allowed_tokens: []     # optional list of token addresses
     denied_tokens: []      # optional list of token addresses
 
-  # Example Solana wallet (scaffold only for now)
+  # Example Solana wallet
   - chain: solana
     address: "GxhQ5LTFc4dTxAXt7aQ4uSKvr8ev9T2QXE9zWKA3pjFP"
     notes: "Initial Solana wallet to follow"
@@ -26,3 +26,4 @@ wallets:
   - chain: evm
     address: "0xd58ca5912fd06c7f228ad1ee152876f41623cf0d"
     notes: "Initial Polygon wallet to follow"
+

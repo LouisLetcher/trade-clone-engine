@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class DexRouters(BaseModel):
     # EVM mainnet/testnets: map of chain_id -> list of router addresses
-    evm: dict[int, List[str]] = {
+    evm: dict[int, list[str]] = {
         1: [
             # Uniswap V2 & V3 main routers
             "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",  # V2
@@ -52,27 +51,27 @@ class AppSettings(BaseSettings):
 
     # Solana
     sol_rpc_url: str = "https://api.mainnet-beta.solana.com"
-    sol_executor_private_key: Optional[str] = None  # base58 secret key
-    sol_executor_pubkey: Optional[str] = None
+    sol_executor_private_key: str | None = None  # base58 secret key
+    sol_executor_pubkey: str | None = None
     jupiter_quote_url: str = "https://quote-api.jup.ag/v6/quote"
     jupiter_swap_url: str = "https://quote-api.jup.ag/v6/swap"
     sol_subscribe_logs: bool = False
 
     # Execution
     dry_run: bool = True
-    evm_private_key: Optional[str] = None
-    executor_address: Optional[str] = None
+    evm_private_key: str | None = None
+    executor_address: str | None = None
     slippage_bps: int = 300  # 3%
     copy_ratio: float = 1.0  # fraction of observed input amount
     max_native_in_wei: int = 0  # 0 means no additional cap
     tx_deadline_seconds: int = 600
-    max_priority_fee_gwei: Optional[float] = None
-    max_fee_gwei: Optional[float] = None
+    max_priority_fee_gwei: float | None = None
+    max_fee_gwei: float | None = None
 
     # Aggregators
-    aggregator: Optional[str] = None  # '1inch' | '0x'
+    aggregator: str | None = None  # '1inch' | '0x'
     oneinch_base_url: str = "https://api.1inch.dev/swap/v5.2"
-    oneinch_api_key: Optional[str] = None
+    oneinch_api_key: str | None = None
     zeroex_base_url: str = "https://api.0x.org"
     zeroex_base_url_base_chain: str = "https://base.api.0x.org"
     zeroex_base_url_polygon: str = "https://polygon.api.0x.org"
@@ -80,29 +79,29 @@ class AppSettings(BaseSettings):
     zeroex_base_url_optimism: str = "https://optimism.api.0x.org"
 
     # Discovery
-    dune_api_key: Optional[str] = None
-    dune_query_id: Optional[int] = None
-    birdeye_api_key: Optional[str] = None
+    dune_api_key: str | None = None
+    dune_query_id: int | None = None
+    birdeye_api_key: str | None = None
     discover_interval_sec: int = 3600
     discover_top_percent: float = 1.0
     discover_min_trades: int = 10
-    nansen_api_key: Optional[str] = None
-    nansen_base_url: Optional[str] = None
-    nansen_endpoint_path: Optional[str] = None
+    nansen_api_key: str | None = None
+    nansen_base_url: str | None = None
+    nansen_endpoint_path: str | None = None
 
     # Alchemy (optional for traces/receipts)
-    alchemy_api_key: Optional[str] = None
-    alchemy_base_url: Optional[str] = None
+    alchemy_api_key: str | None = None
+    alchemy_base_url: str | None = None
 
     # Aggregator per chain (overrides global aggregator). Values: '1inch' | '0x'
-    aggregator_chain_1: Optional[str] = None
-    aggregator_chain_137: Optional[str] = None
-    aggregator_chain_8453: Optional[str] = None
+    aggregator_chain_1: str | None = None
+    aggregator_chain_137: str | None = None
+    aggregator_chain_8453: str | None = None
 
     # Discovery label filters (comma-separated lists)
-    discover_allowed_labels: Optional[str] = None
-    discover_denied_labels: Optional[str] = None
-    discover_chain: Optional[str] = None  # limit discovery to a specific chain, e.g. 'solana' or 'evm'
+    discover_allowed_labels: str | None = None
+    discover_denied_labels: str | None = None
+    discover_chain: str | None = None  # limit discovery to a specific chain, e.g. 'solana' or 'evm'
     discover_once: bool = False  # if true, discovery service runs once and exits
     discover_prune_others: bool = False  # if true and discover_chain set, prune wallets of other chains
 
@@ -126,14 +125,14 @@ class AppSettings(BaseSettings):
             return None
         return v
 
-    def wallets_to_follow(self, chain: str = "evm") -> List[str]:
+    def wallets_to_follow(self, chain: str = "evm") -> list[str]:
         import yaml
 
         path = Path(self.wallets_config)
         if not path.exists():
             return []
         data = yaml.safe_load(path.read_text()) or {}
-        lst: List[str] = []
+        lst: list[str] = []
         for item in data.get("wallets", []):
             addr = item.get("address")
             item_chain = (item.get("chain") or "evm").lower()
@@ -145,14 +144,14 @@ class AppSettings(BaseSettings):
                     lst.append(addr)
         return lst
 
-    def wallet_overrides(self) -> Dict[str, dict]:
+    def wallet_overrides(self) -> dict[str, dict]:
         import yaml
 
         path = Path(self.wallets_config)
         if not path.exists():
             return {}
         data = yaml.safe_load(path.read_text()) or {}
-        out: Dict[str, dict] = {}
+        out: dict[str, dict] = {}
         for item in data.get("wallets", []):
             raw_addr = (item.get("address") or "")
             # Normalize EVM addresses to lowercase; keep Solana as-is

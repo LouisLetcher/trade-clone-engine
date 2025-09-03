@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict
 
 from sqlalchemy import func, select
+
 from trade_clone_engine.db import ExecutedTrade, ObservedTrade, session_scope
 
 
@@ -30,4 +30,3 @@ def get_summary(SessionFactory) -> Summary:
             failed=failed,
             skipped=skipped,
         )
-

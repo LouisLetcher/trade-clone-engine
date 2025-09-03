@@ -34,4 +34,3 @@ def get_swap_quote(
         "allowanceTarget": data.get("allowanceTarget"),
         "buyAmount": int(data.get("buyAmount") or 0),
     }
-

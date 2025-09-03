@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Generator
 
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     DateTime,
+    ForeignKey,
     Integer,
     String,
     Text,
     create_engine,
-    ForeignKey,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker, Session
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    Session,
+    mapped_column,
+    relationship,
+    sessionmaker,
+)
 
 
 class Base(DeclarativeBase):

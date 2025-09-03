@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -8,13 +8,22 @@ repos:
       - id: check-yaml
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.12.11
     hooks:
       - id: ruff
         args: ["--fix"]
 
-  - repo: https://github.com/DavidAnson/markdownlint-cli2-precommit
-    rev: v0.14.0
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: v0.18.1
     hooks:
       - id: markdownlint-cli2
 
+  # Local hook to run tests with coverage before push
+  - repo: local
+    hooks:
+      - id: pytest-cov
+        name: pytest with coverage (min 60%)
+        entry: pytest -q --cov=trade_clone_engine --cov-report=term-missing --cov-report=xml --cov-fail-under=60
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

@@ -25,4 +25,4 @@ build/
 # Data
 data/
 logs/
-
+config/wallets.yaml

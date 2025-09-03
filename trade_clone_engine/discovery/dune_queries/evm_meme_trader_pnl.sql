@@ -42,4 +42,3 @@ WITH swaps AS (
   GROUP BY wallet
 )
 SELECT * FROM pnl ORDER BY realized_pnl_usd DESC;
-

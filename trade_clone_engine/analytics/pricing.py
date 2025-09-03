@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import requests
-from typing import Optional
-
 
 CHAIN_TO_COINGECKO_PLATFORM = {
     1: "ethereum",
@@ -10,7 +8,7 @@ CHAIN_TO_COINGECKO_PLATFORM = {
 }
 
 
-def get_token_price_usd(chain_id: int, token_address: Optional[str], native_symbol: str = "ETH") -> Optional[float]:
+def get_token_price_usd(chain_id: int, token_address: str | None, native_symbol: str = "ETH") -> float | None:
     if not token_address:
         # Native coin
         if chain_id == 1:
@@ -43,4 +41,3 @@ def get_token_price_usd(chain_id: int, token_address: Optional[str], native_symb
     if not rec:
         return None
     return float(rec.get("usd")) if rec.get("usd") is not None else None
-

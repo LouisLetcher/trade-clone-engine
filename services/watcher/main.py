@@ -1,9 +1,8 @@
-import os
 from loguru import logger
 
+from trade_clone_engine.chains.evm import EvmWatcher
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import make_session_factory
-from trade_clone_engine.chains.evm import EvmWatcher
 
 
 def main():
@@ -20,4 +19,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

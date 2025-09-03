@@ -3,29 +3,28 @@ from __future__ import annotations
 import base64
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 from loguru import logger
-from sqlalchemy import select
 from solana.rpc.api import Client
 from solana.rpc.types import TxOpts
 from solders.keypair import Keypair
 from solders.pubkey import Pubkey
+from sqlalchemy import select
 
+from trade_clone_engine.aggregators import jupiter
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import ExecutedTrade, ObservedTrade, session_scope
-from trade_clone_engine.aggregators import jupiter
 
 
 @dataclass
 class SolanaExecutor:
     settings: AppSettings
     client: Client
-    keypair: Optional[Keypair]
-    pubkey: Optional[Pubkey]
+    keypair: Keypair | None
+    pubkey: Pubkey | None
 
     @classmethod
-    def create(cls, settings: AppSettings) -> "SolanaExecutor":
+    def create(cls, settings: AppSettings) -> SolanaExecutor:
         client = Client(settings.sol_rpc_url)
         kp = None
         pk = None
@@ -46,7 +45,7 @@ class SolanaExecutor:
                     rec: ObservedTrade | None = (
                         s.execute(
                             select(ObservedTrade)
-                            .where(ObservedTrade.processed == False, ObservedTrade.chain == "solana")
+                            .where(ObservedTrade.processed.is_(False), ObservedTrade.chain == "solana")
                             .order_by(ObservedTrade.id.asc())
                             .limit(1)
                         )
@@ -91,21 +90,27 @@ class SolanaExecutor:
                             raw_signed = None
                             # Prefer legacy solana-py Transaction if available; otherwise try solders VersionedTransaction
                             try:
-                                from solana.transaction import Transaction as LegacyTransaction  # type: ignore
+                                from solana.transaction import (
+                                    Transaction as LegacyTransaction,  # type: ignore
+                                )
 
                                 tx = LegacyTransaction.deserialize(raw)
                                 tx.sign(self.keypair)
                                 raw_signed = tx.serialize()
                             except Exception:
                                 try:
-                                    from solders.transaction import VersionedTransaction  # type: ignore
+                                    from solders.transaction import (
+                                        VersionedTransaction,  # type: ignore
+                                    )
 
                                     vtx = VersionedTransaction.from_bytes(raw)
                                     # Reconstruct signed transaction using message + signer
                                     vtx = VersionedTransaction(vtx.message, [self.keypair])
                                     raw_signed = bytes(vtx)
                                 except Exception as e2:
-                                    raise Exception(f"Unable to deserialize/sign Jupiter swap tx: {e2}")
+                                    raise Exception(
+                                        f"Unable to deserialize/sign Jupiter swap tx: {e2}"
+                                    ) from e2
 
                             resp = self.client.send_raw_transaction(raw_signed, opts=TxOpts(skip_confirmation=False))
                             tx_sig = resp.value

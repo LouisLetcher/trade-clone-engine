@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import List
 
 import yaml
 from loguru import logger
 
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.discovery.sources import (
-    DuneSource,
     BirdeyeSource,
+    DuneSource,
     GMGNSource,
     NansenSource,
     rank_wallets,
@@ -28,14 +27,13 @@ def save_wallets_yaml(path: Path, data: dict) -> None:
     path.write_text(yaml.safe_dump(data, sort_keys=False))
 
 
-def upsert_wallet(wallets: List[dict], item: dict) -> None:
+def upsert_wallet(wallets: list[dict], item: dict) -> None:
     for w in wallets:
         if w.get("address", "").lower() == item.get("address", "").lower() and (w.get("chain") or "evm").lower() == (item.get("chain") or "evm").lower():
             # Update notes/overrides if present, keep existing risk unless missing
             for k, v in item.items():
-                if k not in ("address",):
-                    if v is not None and (k not in w or w[k] in (None, "")):
-                        w[k] = v
+                if k not in ("address",) and v is not None and (k not in w or w[k] in (None, "")):
+                    w[k] = v
             return
     wallets.append(item)
 
@@ -77,11 +75,9 @@ def run_discovery_once(settings: AppSettings):
 
     def label_ok(w: dict) -> bool:
         labs = [str(x).lower() for x in (w.get("labels") or [])]
-        if deny and any(l in deny for l in labs):
+        if deny and any(lab in deny for lab in labs):
             return False
-        if allow and not any(l in allow for l in labs):
-            return False
-        return True
+        return not (allow and not any(lab in allow for lab in labs))
 
     # Optional chain filter
     only_chain = (settings.__dict__.get("discover_chain") or "").strip().lower()
@@ -103,7 +99,7 @@ def run_discovery_once(settings: AppSettings):
 
     # Optionally prune existing non-target-chain wallets
     if only_chain and bool(settings.__dict__.get("discover_prune_others", False)):
-        wallets = [w for w in wallets if str((w.get("chain") or "")).lower() == only_chain]
+        wallets = [w for w in wallets if str(w.get("chain") or "").lower() == only_chain]
 
     # Risk defaults
     default_copy_ratio = settings.copy_ratio

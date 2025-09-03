@@ -1,14 +1,14 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
 from pydantic import BaseModel
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 
-from trade_clone_engine.config import AppSettings
-from trade_clone_engine.db import ObservedTrade, ExecutedTrade, make_session_factory
 from trade_clone_engine.analytics.metrics import get_summary
-
+from trade_clone_engine.config import AppSettings
+from trade_clone_engine.db import ExecutedTrade, ObservedTrade, make_session_factory
 
 app = FastAPI(title="Trade Clone Engine API")
 settings = AppSettings()

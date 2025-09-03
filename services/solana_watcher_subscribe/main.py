@@ -1,9 +1,10 @@
 import asyncio
+
 from loguru import logger
 
+from trade_clone_engine.chains.solana_watcher import SolanaWatcher
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import make_session_factory
-from trade_clone_engine.chains.solana_watcher import SolanaWatcher
 
 
 def main():
@@ -19,4 +20,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

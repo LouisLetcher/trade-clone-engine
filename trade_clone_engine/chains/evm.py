@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
 
 from loguru import logger
 from web3 import Web3
@@ -18,11 +18,11 @@ from trade_clone_engine.db import ObservedTrade, session_scope
 class EvmWatcher:
     settings: AppSettings
     w3: Web3
-    v2_router: Optional[Contract]
-    v3_router: Optional[Contract]
+    v2_router: Contract | None
+    v3_router: Contract | None
 
     @classmethod
-    def create(cls, settings: AppSettings) -> "EvmWatcher":
+    def create(cls, settings: AppSettings) -> EvmWatcher:
         w3 = Web3(Web3.WebsocketProvider(settings.evm_rpc_ws_url))
         logger.info("Connected to EVM provider: {} (chain id {})", settings.evm_rpc_ws_url, settings.evm_chain_id)
 
@@ -36,7 +36,7 @@ class EvmWatcher:
         v3_router = w3.eth.contract(address=dummy_addr, abi=v3_abi)
         return cls(settings=settings, w3=w3, v2_router=v2_router, v3_router=v3_router)
 
-    def is_known_dex(self, address: Optional[str]) -> bool:
+    def is_known_dex(self, address: str | None) -> bool:
         if not address:
             return False
         addr = Web3.to_checksum_address(address)
@@ -105,7 +105,7 @@ class EvmWatcher:
 
                             if params:
                                 # V2 path-based
-                                if isinstance(params.get("path"), (list, tuple)) and params.get("path"):
+                                if isinstance(params.get("path"), list | tuple) and params.get("path"):
                                     token_in = str(params.get("path")[0])
                                     token_out = str(params.get("path")[-1])
                                 # V3 exactInputSingle tuple

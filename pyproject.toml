@@ -7,7 +7,7 @@ name = "trade-clone-engine"
 version = "0.1.0"
 description = "Modular copy-trading engine for tracking and mirroring trades from configured wallets across chains."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.13"
 authors = [{name = "LouisLetcher"}]
 dependencies = [
   "web3>=6.10.0",

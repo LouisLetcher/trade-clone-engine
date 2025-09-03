@@ -17,21 +17,25 @@ Important: This repository is for educational purposes only. Nothing here is fin
 
 ## Quick Start
 
-1) Copy `.env.example` to `.env` and set a WebSocket RPC URL.
+1. Copy `.env.example` to `.env` and set a WebSocket RPC URL.
 
-```
+```sh
 cp .env.example .env
 ```
 
-2) Configure wallets to follow in `config/wallets.yaml`.
+2. Configure wallets to follow in `config/wallets.yaml` (gitignored). Start from the example:
 
-3) Build and start services:
-
+```sh
+cp config/wallets.example.yaml config/wallets.yaml
 ```
+
+3. Build and start services:
+
+```sh
 docker compose up --build
 ```
 
-4) API available at `http://localhost:8000` with endpoints: `/health`, `/trades`, `/executions`, `/summary`. A simple dashboard is also available at `/dashboard`.
+4. API available at `http://localhost:8000` with endpoints: `/health`, `/trades`, `/executions`, `/summary`. A simple dashboard is also available at `/dashboard`.
    DB migrations run automatically in each service container via Alembic. To avoid race conditions, only one service should run migrations; this repo sets `TCE_RUN_MIGRATIONS=true` on the `api` service.
 
 ## Configuration
@@ -108,15 +112,30 @@ Below are the pre-configured router addresses per chain (you can extend in `trad
 - Simple DB models with SQLAlchemy and context-managed sessions.
 - Minimal decoding via Uniswap V2/V3 ABIs for basic swap detection.
 - Per-wallet overrides via `config/wallets.yaml` (copy ratio, slippage, caps, token allow/deny).
- - Alembic-managed schema with automatic migrations on container start.
+- Alembic-managed schema with automatic migrations on container start.
 
 ## Extending
 
 - Add more chains by creating new adapters in `trade_clone_engine/chains/`.
 - Add more DEX routers to `trade_clone_engine/config.py`.
 - Aggregators: optional integration with 1inch/0x can be added later.
- - Implement Solana watcher with Jupiter routing and Serum/Raydium logs.
- - Add more analytics (realized PnL per wallet, per token) and dashboards.
+- Implement Solana watcher with Jupiter routing and Serum/Raydium logs.
+- Add more analytics (realized PnL per wallet, per token) and dashboards.
+
+## Local Development
+
+- Python: use Python 3.11 (project supports ">=3.10,<3.13").
+- Poetry (recommended):
+  - `poetry env use 3.11`
+  - `poetry install`
+  - `poetry run pre-commit install`
+  - `poetry run pytest -q`
+  - Run stack: `docker compose up --build`
+- Without Poetry:
+  - `python3.11 -m venv .venv && source .venv/bin/activate`
+  - `pip install -e .`
+  - `pip install pre-commit && pre-commit install`
+  - `pytest -q`
 
 ## Solana Watching Modes
 
@@ -148,9 +167,6 @@ Add Solana wallets in `config/wallets.yaml` with `chain: solana` and the address
 - Enhance analytics with price data (e.g., Coingecko) to compute PnL.
 
 ## Security Notes
-  - chain: solana
-    address: "..."
-    notes: "Label"
 
 - Never commit private keys; use secret managers or env vars.
 - Rate-limit and validate all external RPC and API calls.

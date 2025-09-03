@@ -1,5 +1,3 @@
-from importlib.machinery import SourceFileLoader
-from pathlib import Path
 
 
 def test_rank_wallets_filters_and_limits():
@@ -31,4 +29,3 @@ def test_nansen_generic_extractor(tmp_path):
     addrs = src._extract_addresses_generic(payload)
     assert any(a.startswith("0x") for a in addrs)
     assert any(len(a) >= 32 and not a.startswith("0x") for a in addrs)
-

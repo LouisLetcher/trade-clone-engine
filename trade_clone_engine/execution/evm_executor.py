@@ -1,32 +1,31 @@
 from __future__ import annotations
 
-import time
 import json
+import time
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 from sqlalchemy import select
 from web3 import Web3
 
+from trade_clone_engine.aggregators import oneinch as agg_oneinch
+from trade_clone_engine.aggregators import zeroex as agg_zeroex
+from trade_clone_engine.analytics.pricing import get_token_price_usd
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import ExecutedTrade, ObservedTrade, session_scope
 from trade_clone_engine.execution.evm_wallet import EvmWallet
 from trade_clone_engine.execution.uniswap_v2 import (
     V2SwapPlan,
-    compute_min_out,
     build_swap_exact_eth_for_tokens,
     build_swap_exact_tokens_for_eth,
     build_swap_exact_tokens_for_tokens,
+    compute_min_out,
 )
 from trade_clone_engine.execution.uniswap_v3 import (
     V3SinglePlan,
-    compute_min_out_single,
     build_exact_input_single,
+    compute_min_out_single,
 )
-from trade_clone_engine.aggregators import oneinch as agg_oneinch
-from trade_clone_engine.aggregators import zeroex as agg_zeroex
-from trade_clone_engine.analytics.pricing import get_token_price_usd
 from trade_clone_engine.providers.alchemy import trace_native_received
 
 
@@ -57,7 +56,7 @@ class EvmExecutor:
         amount_in: int,
         is_native_in: bool,
         slippage_bps: int,
-    ) -> tuple[Optional[str], Optional[int]]:
+    ) -> tuple[str | None, int | None]:
         # Select aggregator per-chain override if provided
         agg_name = (
             getattr(self.settings, f"aggregator_chain_{self.settings.evm_chain_id}", None)
@@ -144,7 +143,10 @@ class EvmExecutor:
                 with session_scope(SessionFactory) as s:
                     rec: ObservedTrade | None = (
                         s.execute(
-                            select(ObservedTrade).where(ObservedTrade.processed == False).order_by(ObservedTrade.id.asc()).limit(1)
+                            select(ObservedTrade)
+                            .where(ObservedTrade.processed.is_(False))
+                            .order_by(ObservedTrade.id.asc())
+                            .limit(1)
                         )
                         .scalars()
                         .first()
@@ -183,13 +185,9 @@ class EvmExecutor:
                     allowed = set([a.lower() for a in overrides.get("allowed_tokens", [])])
                     denied = set([a.lower() for a in overrides.get("denied_tokens", [])])
 
-                    def tokens_ok(tokens: list[str]) -> bool:
+                    def tokens_ok(tokens: list[str], allowed=allowed, denied=denied) -> bool:
                         toks = [t.lower() for t in tokens if t]
-                        if any(t in denied for t in toks):
-                            return False
-                        if allowed and not all(t in allowed for t in toks):
-                            return False
-                        return True
+                        return not any(t in denied for t in toks) and (not allowed or all(t in allowed for t in toks))
 
                     # Support V2 and V3
                     if decoded_is_v2 and method in (
@@ -307,10 +305,14 @@ class EvmExecutor:
                                             transfer_sig = self.wallet.w3.keccak(text="Transfer(address,address,uint256)").hex()
                                             to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
-                                                if lg.get("address", "").lower() == rec.token_out.lower() and lg.get("topics", [])[0].hex() == transfer_sig:
-                                                    if len(lg.get("topics", [])) >= 3 and to_addr:
-                                                        topic_to = lg["topics"][2].hex()
-                                                        addr = "0x" + topic_to[-40:]
+                                                if (
+                                                    lg.get("address", "").lower() == rec.token_out.lower()
+                                                    and lg.get("topics", [])[0].hex() == transfer_sig
+                                                    and len(lg.get("topics", [])) >= 3
+                                                    and to_addr
+                                                ):
+                                                    topic_to = lg["topics"][2].hex()
+                                                    addr = "0x" + topic_to[-40:]
                                                         if addr.lower() == to_addr:
                                                             val = int(lg.get("data", "0x0"), 16)
                                                             amount_out_est = val
@@ -321,11 +323,15 @@ class EvmExecutor:
                                             if wrapped:
                                                 withdraw_sig = self.wallet.w3.keccak(text="Withdrawal(address,uint256)").hex()
                                                 to_addr = (self.wallet.address or "").lower()
-                                                for lg in rcpt.get("logs", []):
-                                                    if lg.get("address", "").lower() == wrapped.lower() and lg.get("topics", [])[0].hex() == withdraw_sig:
-                                                        if len(lg.get("topics", [])) >= 2 and to_addr:
-                                                            topic_src = lg["topics"][1].hex()
-                                                            src = "0x" + topic_src[-40:]
+                                            for lg in rcpt.get("logs", []):
+                                                if (
+                                                    lg.get("address", "").lower() == wrapped.lower()
+                                                    and lg.get("topics", [])[0].hex() == withdraw_sig
+                                                    and len(lg.get("topics", [])) >= 2
+                                                    and to_addr
+                                                ):
+                                                    topic_src = lg["topics"][1].hex()
+                                                    src = "0x" + topic_src[-40:]
                                                             if src.lower() == to_addr:
                                                                 val = int(lg.get("data", "0x0"), 16)
                                                                 amount_out_est = val
@@ -464,10 +470,14 @@ class EvmExecutor:
                                             transfer_sig = self.wallet.w3.keccak(text="Transfer(address,address,uint256)").hex()
                                             to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
-                                                if lg.get("address", "").lower() == rec.token_out.lower() and lg.get("topics", [])[0].hex() == transfer_sig:
-                                                    if len(lg.get("topics", [])) >= 3 and to_addr:
-                                                        topic_to = lg["topics"][2].hex()
-                                                        addr = "0x" + topic_to[-40:]
+                                                if (
+                                                    lg.get("address", "").lower() == rec.token_out.lower()
+                                                    and lg.get("topics", [])[0].hex() == transfer_sig
+                                                    and len(lg.get("topics", [])) >= 3
+                                                    and to_addr
+                                                ):
+                                                    topic_to = lg["topics"][2].hex()
+                                                    addr = "0x" + topic_to[-40:]
                                                         if addr.lower() == to_addr:
                                                             val = int(lg.get("data", "0x0"), 16)
                                                             amount_out_est = val
@@ -477,11 +487,15 @@ class EvmExecutor:
                                             if wrapped:
                                                 withdraw_sig = self.wallet.w3.keccak(text="Withdrawal(address,uint256)").hex()
                                                 to_addr = (self.wallet.address or "").lower()
-                                                for lg in rcpt.get("logs", []):
-                                                    if lg.get("address", "").lower() == wrapped.lower() and lg.get("topics", [])[0].hex() == withdraw_sig:
-                                                        if len(lg.get("topics", [])) >= 2 and to_addr:
-                                                            topic_src = lg["topics"][1].hex()
-                                                            src = "0x" + topic_src[-40:]
+                                            for lg in rcpt.get("logs", []):
+                                                if (
+                                                    lg.get("address", "").lower() == wrapped.lower()
+                                                    and lg.get("topics", [])[0].hex() == withdraw_sig
+                                                    and len(lg.get("topics", [])) >= 2
+                                                    and to_addr
+                                                ):
+                                                    topic_src = lg["topics"][1].hex()
+                                                    src = "0x" + topic_src[-40:]
                                                             if src.lower() == to_addr:
                                                                 val = int(lg.get("data", "0x0"), 16)
                                                                 amount_out_est = val
