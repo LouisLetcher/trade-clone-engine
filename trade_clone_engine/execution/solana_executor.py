@@ -30,6 +30,7 @@ class SolanaExecutor:
         pk = None
         if settings.sol_executor_private_key:
             import base58
+
             secret = base58.b58decode(settings.sol_executor_private_key)
             kp = Keypair.from_bytes(secret)
             pk = kp.pubkey()
@@ -45,7 +46,9 @@ class SolanaExecutor:
                     rec: ObservedTrade | None = (
                         s.execute(
                             select(ObservedTrade)
-                            .where(ObservedTrade.processed.is_(False), ObservedTrade.chain == "solana")
+                            .where(
+                                ObservedTrade.processed.is_(False), ObservedTrade.chain == "solana"
+                            )
                             .order_by(ObservedTrade.id.asc())
                             .limit(1)
                         )
@@ -112,12 +115,16 @@ class SolanaExecutor:
                                         f"Unable to deserialize/sign Jupiter swap tx: {e2}"
                                     ) from e2
 
-                            resp = self.client.send_raw_transaction(raw_signed, opts=TxOpts(skip_confirmation=False))
+                            resp = self.client.send_raw_transaction(
+                                raw_signed, opts=TxOpts(skip_confirmation=False)
+                            )
                             tx_sig = resp.value
                             status = "success"
 
                             # Fetch confirmed transaction to get realized amounts
-                            tr = self.client.get_transaction(tx_sig, max_supported_transaction_version=0)
+                            tr = self.client.get_transaction(
+                                tx_sig, max_supported_transaction_version=0
+                            )
                             meta = (tr.get("result") or {}).get("meta") or {}
                             post = meta.get("postTokenBalances") or []
                             pre = meta.get("preTokenBalances") or []

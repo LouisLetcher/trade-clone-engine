@@ -24,7 +24,10 @@ def test_nansen_dcas_post_body_and_parse(monkeypatch):
         payload = {
             "data": [
                 {"trader_address": "9xQe...Sol", "chain": "solana"},
-                {"trader_address": "0xAbCdEf0123456789aBCdef0123456789AbCdEf01", "chain": "ethereum"},
+                {
+                    "trader_address": "0xAbCdEf0123456789aBCdef0123456789AbCdEf01",
+                    "chain": "ethereum",
+                },
             ],
             "pagination": {"page": 1, "per_page": 2, "is_last_page": True},
         }
@@ -67,7 +70,11 @@ def test_nansen_top_traders_get_parse(monkeypatch):
         return FakeResp(True, payload)
 
     monkeypatch.setattr("requests.get", fake_get)
-    src = NansenSource(api_key="k", base_url="https://api.nansen.ai/api/v1", endpoint_path="smart-money/top-traders?timeRange=7d")
+    src = NansenSource(
+        api_key="k",
+        base_url="https://api.nansen.ai/api/v1",
+        endpoint_path="smart-money/top-traders?timeRange=7d",
+    )
     out = src.top_wallets(limit=2)
     addrs = {w["address"] for w in out}
     assert "0xabcdef0123456789abcdef0123456789abcdef01" in addrs

@@ -24,7 +24,14 @@ def test_import_wallets_parse_and_upsert(tmp_path):
     wallets_yaml.write_text("wallets: []\n")
     data = mod.load_wallets_yaml(wallets_yaml)
     wallets = data.get("wallets", [])
-    defaults = {"notes": "test", "copy_ratio": 0.2, "slippage_bps": 300, "max_native_in_wei": 0, "allowed_tokens": [], "denied_tokens": []}
+    defaults = {
+        "notes": "test",
+        "copy_ratio": 0.2,
+        "slippage_bps": 300,
+        "max_native_in_wei": 0,
+        "allowed_tokens": [],
+        "denied_tokens": [],
+    }
     for a in addrs:
         mod.upsert(wallets, "solana" if not a.startswith("0x") else "evm", a, defaults)
     data["wallets"] = wallets

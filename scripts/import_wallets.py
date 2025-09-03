@@ -53,13 +53,23 @@ def upsert(wallets: list[dict], chain: str, address: str, defaults: dict) -> Non
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Import wallets into config/wallets.yaml")
-    p.add_argument("--input", "-i", help="Input file (JSON array or newline-separated addresses). If omitted, reads stdin.")
-    p.add_argument("--chain", default="solana", help="Chain for imported wallets: solana|evm (default: solana)")
+    p.add_argument(
+        "--input",
+        "-i",
+        help="Input file (JSON array or newline-separated addresses). If omitted, reads stdin.",
+    )
+    p.add_argument(
+        "--chain", default="solana", help="Chain for imported wallets: solana|evm (default: solana)"
+    )
     p.add_argument("--wallets-yaml", default="config/wallets.yaml", help="Path to wallets.yaml")
     p.add_argument("--copy-ratio", type=float, default=0.2)
     p.add_argument("--slippage-bps", type=int, default=300)
     p.add_argument("--max-native-in-wei", type=int, default=0)
-    p.add_argument("--prune-others", action="store_true", help="Remove wallets of other chains before importing")
+    p.add_argument(
+        "--prune-others",
+        action="store_true",
+        help="Remove wallets of other chains before importing",
+    )
     args = p.parse_args()
 
     # Load input
