@@ -26,8 +26,14 @@ class EvmWallet:
     address: str | None
 
     @classmethod
-    def create(cls, rpc_url: str, chain_id: int, private_key: str | None, explicit_address: str | None):
-        w3 = Web3(Web3.WebsocketProvider(rpc_url) if rpc_url.startswith("ws") else Web3(Web3.HTTPProvider(rpc_url)))
+    def create(
+        cls, rpc_url: str, chain_id: int, private_key: str | None, explicit_address: str | None
+    ):
+        w3 = Web3(
+            Web3.WebsocketProvider(rpc_url)
+            if rpc_url.startswith("ws")
+            else Web3(Web3.HTTPProvider(rpc_url))
+        )
         addr = explicit_address
         if private_key and not addr:
             addr = Account.from_key(private_key).address

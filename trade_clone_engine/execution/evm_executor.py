@@ -83,9 +83,13 @@ class EvmExecutor:
                 allowance_target = q.get("allowanceTarget")
                 if allowance_target and (not is_native_in) and (not self.settings.dry_run):
                     erc20 = self.wallet.erc20(token_in)
-                    allowance = int(erc20.functions.allowance(self.wallet.address, allowance_target).call())
+                    allowance = int(
+                        erc20.functions.allowance(self.wallet.address, allowance_target).call()
+                    )
                     if allowance < amount_in:
-                        tx = erc20.functions.approve(allowance_target, amount_in).build_transaction({"from": self.wallet.address})
+                        tx = erc20.functions.approve(allowance_target, amount_in).build_transaction(
+                            {"from": self.wallet.address}
+                        )
                         _txh = self.wallet.send_tx(tx)
                 tx = {
                     "to": q["to"],
@@ -118,9 +122,13 @@ class EvmExecutor:
                 allowance_target = q.get("allowanceTarget")
                 if allowance_target and (not is_native_in) and (not self.settings.dry_run):
                     erc20 = self.wallet.erc20(token_in)
-                    allowance = int(erc20.functions.allowance(self.wallet.address, allowance_target).call())
+                    allowance = int(
+                        erc20.functions.allowance(self.wallet.address, allowance_target).call()
+                    )
                     if allowance < amount_in:
-                        tx = erc20.functions.approve(allowance_target, amount_in).build_transaction({"from": self.wallet.address})
+                        tx = erc20.functions.approve(allowance_target, amount_in).build_transaction(
+                            {"from": self.wallet.address}
+                        )
                         _txh = self.wallet.send_tx(tx)
                 tx = {
                     "to": q["to"],
@@ -160,7 +168,12 @@ class EvmExecutor:
                     err = None
                     gas_spent = None
 
-                    logger.info("Processing observed trade {}: method={} dex={}", rec.id, rec.method, rec.dex)
+                    logger.info(
+                        "Processing observed trade {}: method={} dex={}",
+                        rec.id,
+                        rec.method,
+                        rec.dex,
+                    )
 
                     # Decode to retrieve method + params (esp. path & amounts)
                     method = rec.method
@@ -180,14 +193,20 @@ class EvmExecutor:
 
                     overrides = self.settings.wallet_overrides().get((rec.wallet or "").lower(), {})
                     eff_copy_ratio = float(overrides.get("copy_ratio", self.settings.copy_ratio))
-                    eff_slippage_bps = int(overrides.get("slippage_bps", self.settings.slippage_bps))
-                    eff_max_native = int(overrides.get("max_native_in_wei", self.settings.max_native_in_wei or 0))
+                    eff_slippage_bps = int(
+                        overrides.get("slippage_bps", self.settings.slippage_bps)
+                    )
+                    eff_max_native = int(
+                        overrides.get("max_native_in_wei", self.settings.max_native_in_wei or 0)
+                    )
                     allowed = set([a.lower() for a in overrides.get("allowed_tokens", [])])
                     denied = set([a.lower() for a in overrides.get("denied_tokens", [])])
 
                     def tokens_ok(tokens: list[str], allowed=allowed, denied=denied) -> bool:
                         toks = [t.lower() for t in tokens if t]
-                        return not any(t in denied for t in toks) and (not allowed or all(t in allowed for t in toks))
+                        return not any(t in denied for t in toks) and (
+                            not allowed or all(t in allowed for t in toks)
+                        )
 
                     # Support V2 and V3
                     if decoded_is_v2 and method in (
@@ -219,7 +238,9 @@ class EvmExecutor:
                                 use_amount_in = min(use_amount_in, int(eff_max_native))
                                 native_value = use_amount_in
 
-                            recipient = self.wallet.address or "0x0000000000000000000000000000000000000000"
+                            recipient = (
+                                self.wallet.address or "0x0000000000000000000000000000000000000000"
+                            )
                             deadline = int(time.time()) + int(self.settings.tx_deadline_seconds)
 
                             # Compute minOut via getAmountsOut with slippage applied
@@ -237,24 +258,36 @@ class EvmExecutor:
                             )
 
                             # For token-in routes, ensure allowance
-                            if method in ("swapExactTokensForETH", "swapExactTokensForTokens") and not self.settings.dry_run:
+                            if (
+                                method in ("swapExactTokensForETH", "swapExactTokensForTokens")
+                                and not self.settings.dry_run
+                            ):
                                 token_in = path[0]
                                 erc20 = self.wallet.erc20(token_in)
                                 allowance = int(
-                                    erc20.functions.allowance(self.wallet.address, router_addr).call()
+                                    erc20.functions.allowance(
+                                        self.wallet.address, router_addr
+                                    ).call()
                                 )
                                 if allowance < use_amount_in:
-                                    logger.info("Approving router {} for {} wei of {}", router_addr, use_amount_in, token_in)
-                                    tx = erc20.functions.approve(router_addr, use_amount_in).build_transaction(
-                                        {"from": self.wallet.address}
+                                    logger.info(
+                                        "Approving router {} for {} wei of {}",
+                                        router_addr,
+                                        use_amount_in,
+                                        token_in,
                                     )
+                                    tx = erc20.functions.approve(
+                                        router_addr, use_amount_in
+                                    ).build_transaction({"from": self.wallet.address})
                                     tx_hash = self.wallet.send_tx(tx)
                                     logger.info("Approve tx: {}", tx_hash)
 
                             # Try aggregator first if configured
                             amount_out_est = None
                             is_native_in = method == "swapExactETHForTokens"
-                            agg_txh, agg_buy = self._try_aggregator(path[0], path[-1], use_amount_in, is_native_in, eff_slippage_bps)
+                            agg_txh, agg_buy = self._try_aggregator(
+                                path[0], path[-1], use_amount_in, is_native_in, eff_slippage_bps
+                            )
                             skip_router = False
                             if agg_txh is not None:
                                 tx_hash = agg_txh
@@ -284,7 +317,9 @@ class EvmExecutor:
                                         tx["value"] = plan.value
                                     # Respect gas overrides if provided
                                     if self.settings.max_fee_gwei is not None:
-                                        tx["maxFeePerGas"] = self.wallet.w3.to_wei(self.settings.max_fee_gwei, "gwei")
+                                        tx["maxFeePerGas"] = self.wallet.w3.to_wei(
+                                            self.settings.max_fee_gwei, "gwei"
+                                        )
                                     if self.settings.max_priority_fee_gwei is not None:
                                         tx["maxPriorityFeePerGas"] = self.wallet.w3.to_wei(
                                             self.settings.max_priority_fee_gwei, "gwei"
@@ -294,7 +329,9 @@ class EvmExecutor:
                                 status = "success"
                                 # Parse receipt for realized gas and output amount (ERC20 only)
                                 try:
-                                    rcpt = self.wallet.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                                    rcpt = self.wallet.w3.eth.wait_for_transaction_receipt(
+                                        tx_hash, timeout=120
+                                    )
                                     if rcpt and rcpt.get("status") == 1:
                                         gas_used = rcpt.get("gasUsed")
                                         eff = rcpt.get("effectiveGasPrice")
@@ -302,12 +339,16 @@ class EvmExecutor:
                                             gas_spent = str(int(gas_used) * int(eff))
                                         # If token_out is ERC20, parse Transfer to our address
                                         if rec.token_out:
-                                            transfer_sig = self.wallet.w3.keccak(text="Transfer(address,address,uint256)").hex()
+                                            transfer_sig = self.wallet.w3.keccak(
+                                                text="Transfer(address,address,uint256)"
+                                            ).hex()
                                             to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
                                                 if (
-                                                    lg.get("address", "").lower() == rec.token_out.lower()
-                                                    and lg.get("topics", [])[0].hex() == transfer_sig
+                                                    lg.get("address", "").lower()
+                                                    == rec.token_out.lower()
+                                                    and lg.get("topics", [])[0].hex()
+                                                    == transfer_sig
                                                     and len(lg.get("topics", [])) >= 3
                                                     and to_addr
                                                 ):
@@ -319,14 +360,19 @@ class EvmExecutor:
                                                         break
                                         else:
                                             # Native out (ETH) via WETH Withdrawal event to our address
-                                            wrapped = self.settings.dex_routers.native_wrapped.get(self.settings.evm_chain_id)
+                                            wrapped = self.settings.dex_routers.native_wrapped.get(
+                                                self.settings.evm_chain_id
+                                            )
                                             if wrapped:
-                                                withdraw_sig = self.wallet.w3.keccak(text="Withdrawal(address,uint256)").hex()
+                                                withdraw_sig = self.wallet.w3.keccak(
+                                                    text="Withdrawal(address,uint256)"
+                                                ).hex()
                                                 to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
                                                 if (
                                                     lg.get("address", "").lower() == wrapped.lower()
-                                                    and lg.get("topics", [])[0].hex() == withdraw_sig
+                                                    and lg.get("topics", [])[0].hex()
+                                                    == withdraw_sig
                                                     and len(lg.get("topics", [])) >= 2
                                                     and to_addr
                                                 ):
@@ -341,15 +387,21 @@ class EvmExecutor:
                                                 try:
                                                     bn = rcpt.get("blockNumber")
                                                     addr = self.wallet.address
-                                                    bal_before = self.wallet.w3.eth.get_balance(addr, bn - 1)
-                                                    bal_after = self.wallet.w3.eth.get_balance(addr, bn)
+                                                    bal_before = self.wallet.w3.eth.get_balance(
+                                                        addr, bn - 1
+                                                    )
+                                                    bal_after = self.wallet.w3.eth.get_balance(
+                                                        addr, bn
+                                                    )
                                                     gas = int(gas_spent) if gas_spent else 0
                                                     delta = int(bal_after) - int(bal_before)
                                                     recv = delta + gas
                                                     if recv > 0:
                                                         amount_out_est = recv
                                                 except Exception as __e:
-                                                    logger.debug("Balance delta fallback failed: {}", __e)
+                                                    logger.debug(
+                                                        "Balance delta fallback failed: {}", __e
+                                                    )
                                             # Fallback via Alchemy traces
                                             if (
                                                 amount_out_est is None
@@ -358,7 +410,9 @@ class EvmExecutor:
                                                 and self.wallet.address
                                             ):
                                                 rpc_url = f"{self.settings.alchemy_base_url.rstrip('/')}/{self.settings.alchemy_api_key}"
-                                                traced = trace_native_received(rpc_url, tx_hash, self.wallet.address)
+                                                traced = trace_native_received(
+                                                    rpc_url, tx_hash, self.wallet.address
+                                                )
                                                 if traced:
                                                     amount_out_est = traced
                                 except Exception as _e:
@@ -374,13 +428,20 @@ class EvmExecutor:
                     elif (not decoded_is_v2) and method in ("exactInputSingle",):
                         try:
                             router_addr = Web3.to_checksum_address(rec.dex)
-                            router = self.wallet.w3.eth.contract(address=router_addr, abi=self.v3_abi)
-                            quoter_addr = self.settings.dex_routers.v3_quoters.get(self.settings.evm_chain_id)
+                            router = self.wallet.w3.eth.contract(
+                                address=router_addr, abi=self.v3_abi
+                            )
+                            quoter_addr = self.settings.dex_routers.v3_quoters.get(
+                                self.settings.evm_chain_id
+                            )
                             if not quoter_addr:
                                 status = "skipped"
                                 err = "No V3 quoter configured for chain"
                                 raise Exception(err)
-                            quoter = self.wallet.w3.eth.contract(address=Web3.to_checksum_address(quoter_addr), abi=self.v3_quoter_abi)
+                            quoter = self.wallet.w3.eth.contract(
+                                address=Web3.to_checksum_address(quoter_addr),
+                                abi=self.v3_quoter_abi,
+                            )
 
                             p = params.get("params") if isinstance(params, dict) else None
                             token_in = Web3.to_checksum_address(p.get("tokenIn"))
@@ -394,14 +455,20 @@ class EvmExecutor:
                             observed_amount_in = int(p.get("amountIn"))
                             use_amount_in = int(observed_amount_in * max(0.0, eff_copy_ratio))
 
-                            recipient = self.wallet.address or "0x0000000000000000000000000000000000000000"
+                            recipient = (
+                                self.wallet.address or "0x0000000000000000000000000000000000000000"
+                            )
                             deadline = int(time.time()) + int(self.settings.tx_deadline_seconds)
 
-                            min_out = compute_min_out_single(quoter, token_in, token_out, fee, use_amount_in, eff_slippage_bps)
+                            min_out = compute_min_out_single(
+                                quoter, token_in, token_out, fee, use_amount_in, eff_slippage_bps
+                            )
 
                             native_value = 0
                             # If tokenIn is wrapped native, we can pay in ETH
-                            wrapped_native = self.settings.dex_routers.native_wrapped.get(self.settings.evm_chain_id)
+                            wrapped_native = self.settings.dex_routers.native_wrapped.get(
+                                self.settings.evm_chain_id
+                            )
                             if wrapped_native and token_in.lower() == wrapped_native.lower():
                                 native_value = use_amount_in
                                 if eff_max_native:
@@ -411,10 +478,21 @@ class EvmExecutor:
                             # Approve tokenIn if not paying native
                             if native_value == 0 and not self.settings.dry_run:
                                 erc20 = self.wallet.erc20(token_in)
-                                allowance = int(erc20.functions.allowance(self.wallet.address, router_addr).call())
+                                allowance = int(
+                                    erc20.functions.allowance(
+                                        self.wallet.address, router_addr
+                                    ).call()
+                                )
                                 if allowance < use_amount_in:
-                                    logger.info("Approving router {} for {} wei of {} (V3)", router_addr, use_amount_in, token_in)
-                                    tx = erc20.functions.approve(router_addr, use_amount_in).build_transaction({"from": self.wallet.address})
+                                    logger.info(
+                                        "Approving router {} for {} wei of {} (V3)",
+                                        router_addr,
+                                        use_amount_in,
+                                        token_in,
+                                    )
+                                    tx = erc20.functions.approve(
+                                        router_addr, use_amount_in
+                                    ).build_transaction({"from": self.wallet.address})
                                     tx_hash = self.wallet.send_tx(tx)
                                     logger.info("Approve tx: {}", tx_hash)
 
@@ -433,7 +511,9 @@ class EvmExecutor:
                             # Try aggregator first if configured
                             amount_out_est = None
                             is_native_in = native_value > 0
-                            agg_txh, agg_buy = self._try_aggregator(token_in, token_out, use_amount_in, is_native_in, eff_slippage_bps)
+                            agg_txh, agg_buy = self._try_aggregator(
+                                token_in, token_out, use_amount_in, is_native_in, eff_slippage_bps
+                            )
                             skip_router = False
                             if agg_txh is not None:
                                 tx_hash = agg_txh
@@ -454,25 +534,35 @@ class EvmExecutor:
                                     if plan.value:
                                         tx["value"] = plan.value
                                     if self.settings.max_fee_gwei is not None:
-                                        tx["maxFeePerGas"] = self.wallet.w3.to_wei(self.settings.max_fee_gwei, "gwei")
+                                        tx["maxFeePerGas"] = self.wallet.w3.to_wei(
+                                            self.settings.max_fee_gwei, "gwei"
+                                        )
                                     if self.settings.max_priority_fee_gwei is not None:
-                                        tx["maxPriorityFeePerGas"] = self.wallet.w3.to_wei(self.settings.max_priority_fee_gwei, "gwei")
+                                        tx["maxPriorityFeePerGas"] = self.wallet.w3.to_wei(
+                                            self.settings.max_priority_fee_gwei, "gwei"
+                                        )
                                 tx_hash = self.wallet.send_tx(tx)
                                 status = "success"
                                 try:
-                                    rcpt = self.wallet.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                                    rcpt = self.wallet.w3.eth.wait_for_transaction_receipt(
+                                        tx_hash, timeout=120
+                                    )
                                     if rcpt and rcpt.get("status") == 1:
                                         gas_used = rcpt.get("gasUsed")
                                         eff = rcpt.get("effectiveGasPrice")
                                         if gas_used is not None and eff is not None:
                                             gas_spent = str(int(gas_used) * int(eff))
                                         if rec.token_out:
-                                            transfer_sig = self.wallet.w3.keccak(text="Transfer(address,address,uint256)").hex()
+                                            transfer_sig = self.wallet.w3.keccak(
+                                                text="Transfer(address,address,uint256)"
+                                            ).hex()
                                             to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
                                                 if (
-                                                    lg.get("address", "").lower() == rec.token_out.lower()
-                                                    and lg.get("topics", [])[0].hex() == transfer_sig
+                                                    lg.get("address", "").lower()
+                                                    == rec.token_out.lower()
+                                                    and lg.get("topics", [])[0].hex()
+                                                    == transfer_sig
                                                     and len(lg.get("topics", [])) >= 3
                                                     and to_addr
                                                 ):
@@ -483,14 +573,19 @@ class EvmExecutor:
                                                         amount_out_est = val
                                                         break
                                         else:
-                                            wrapped = self.settings.dex_routers.native_wrapped.get(self.settings.evm_chain_id)
+                                            wrapped = self.settings.dex_routers.native_wrapped.get(
+                                                self.settings.evm_chain_id
+                                            )
                                             if wrapped:
-                                                withdraw_sig = self.wallet.w3.keccak(text="Withdrawal(address,uint256)").hex()
+                                                withdraw_sig = self.wallet.w3.keccak(
+                                                    text="Withdrawal(address,uint256)"
+                                                ).hex()
                                                 to_addr = (self.wallet.address or "").lower()
                                             for lg in rcpt.get("logs", []):
                                                 if (
                                                     lg.get("address", "").lower() == wrapped.lower()
-                                                    and lg.get("topics", [])[0].hex() == withdraw_sig
+                                                    and lg.get("topics", [])[0].hex()
+                                                    == withdraw_sig
                                                     and len(lg.get("topics", [])) >= 2
                                                     and to_addr
                                                 ):
@@ -505,15 +600,21 @@ class EvmExecutor:
                                                 try:
                                                     bn = rcpt.get("blockNumber")
                                                     addr = self.wallet.address
-                                                    bal_before = self.wallet.w3.eth.get_balance(addr, bn - 1)
-                                                    bal_after = self.wallet.w3.eth.get_balance(addr, bn)
+                                                    bal_before = self.wallet.w3.eth.get_balance(
+                                                        addr, bn - 1
+                                                    )
+                                                    bal_after = self.wallet.w3.eth.get_balance(
+                                                        addr, bn
+                                                    )
                                                     gas = int(gas_spent) if gas_spent else 0
                                                     delta = int(bal_after) - int(bal_before)
                                                     recv = delta + gas
                                                     if recv > 0:
                                                         amount_out_est = recv
                                                 except Exception as __e:
-                                                    logger.debug("Balance delta fallback failed: {}", __e)
+                                                    logger.debug(
+                                                        "Balance delta fallback failed: {}", __e
+                                                    )
                                             if (
                                                 amount_out_est is None
                                                 and self.settings.alchemy_base_url
@@ -521,7 +622,9 @@ class EvmExecutor:
                                                 and self.wallet.address
                                             ):
                                                 rpc_url = f"{self.settings.alchemy_base_url.rstrip('/')}/{self.settings.alchemy_api_key}"
-                                                traced = trace_native_received(rpc_url, tx_hash, self.wallet.address)
+                                                traced = trace_native_received(
+                                                    rpc_url, tx_hash, self.wallet.address
+                                                )
                                                 if traced:
                                                     amount_out_est = traced
                                 except Exception as _e:
@@ -549,20 +652,33 @@ class EvmExecutor:
                         token_in=rec.token_in,
                         token_out=rec.token_out,
                         amount_in_wei=rec.amount_in_wei,
-                        amount_out_wei=str(amount_out_est) if 'amount_out_est' in locals() and amount_out_est is not None else None,
+                        amount_out_wei=str(amount_out_est)
+                        if "amount_out_est" in locals() and amount_out_est is not None
+                        else None,
                     )
                     rec.processed = True
                     # If we executed successfully and have token addresses, try to capture USD values
                     if exec_rec.status in ("success", "skipped"):
                         try:
                             # Basic pricing snapshot; may be None
-                            price_in = get_token_price_usd(self.settings.evm_chain_id, exec_rec.token_in)
-                            price_out = get_token_price_usd(self.settings.evm_chain_id, exec_rec.token_out)
+                            price_in = get_token_price_usd(
+                                self.settings.evm_chain_id, exec_rec.token_in
+                            )
+                            price_out = get_token_price_usd(
+                                self.settings.evm_chain_id, exec_rec.token_out
+                            )
                             if exec_rec.amount_in_wei and price_in is not None:
-                                exec_rec.amount_in_usd = (int(exec_rec.amount_in_wei) / 1e18) * price_in
+                                exec_rec.amount_in_usd = (
+                                    int(exec_rec.amount_in_wei) / 1e18
+                                ) * price_in
                             if exec_rec.amount_out_wei and price_out is not None:
-                                exec_rec.amount_out_usd = (int(exec_rec.amount_out_wei) / 1e18) * price_out
-                            if exec_rec.amount_in_usd is not None and exec_rec.amount_out_usd is not None:
+                                exec_rec.amount_out_usd = (
+                                    int(exec_rec.amount_out_wei) / 1e18
+                                ) * price_out
+                            if (
+                                exec_rec.amount_in_usd is not None
+                                and exec_rec.amount_out_usd is not None
+                            ):
                                 exec_rec.pnl_usd = exec_rec.amount_out_usd - exec_rec.amount_in_usd
                         except Exception as _e:
                             logger.debug("Pricing failed: {}", _e)
