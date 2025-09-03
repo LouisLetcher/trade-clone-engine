@@ -1,0 +1,6 @@
+{
+  // Keep defaults, allow long lines in code blocks and tables
+  "MD013": false,
+  "MD033": false
+}
+

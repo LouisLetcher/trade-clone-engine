@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+
+# Env
+.env
+.env.local
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# Docker
+dist/
+build/
+*.log
+
+# Data
+data/
+logs/
+

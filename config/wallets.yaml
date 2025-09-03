@@ -1,0 +1,28 @@
+wallets:
+  # Example: set per-wallet overrides safely
+  - chain: evm
+    address: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+    notes: "Example wallet"
+    copy_ratio: 0.2        # 20% of observed amount
+    slippage_bps: 300      # 3%
+    max_native_in_wei: 0   # 0 to disable cap
+    allowed_tokens: []     # optional list of token addresses
+    denied_tokens: []      # optional list of token addresses
+
+  # Example Solana wallet (scaffold only for now)
+  - chain: solana
+    address: "GxhQ5LTFc4dTxAXt7aQ4uSKvr8ev9T2QXE9zWKA3pjFP"
+    notes: "Initial Solana wallet to follow"
+
+  - chain: solana
+    address: "436f8vRPNCsfLoGBnNA4y5bUBAyYFRWzBCjbLkhK2Pja"
+    notes: "Second Solana wallet to follow"
+
+  - chain: solana
+    address: "F9wsCFEh6351hrPq7oi3Badr4JpFnTr3qeqczBFDhUf2"
+    notes: "Third Solana wallet to follow"
+
+  # Polygon (EVM) wallet to follow — ensure watcher runs on chain 137
+  - chain: evm
+    address: "0xd58ca5912fd06c7f228ad1ee152876f41623cf0d"
+    notes: "Initial Polygon wallet to follow"

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TCE Dashboard</title>
+  <!-- Tailwind CDN (TailAdmin-like utility classes) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#3b82f6',
+              600: '#2563eb',
+            },
+          },
+        }
+      }
+    };
+  </script>
+  <script>
+    async function fetchJSON(path) {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(`${path} -> ${r.status}`);
+      return await r.json();
+    }
+    function setText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text; }
+    function row(cols) { return `<tr>${cols.map(c => `<td>${c ?? ''}</td>`).join('')}</tr>`; }
+    async function load() {
+      try {
+        const summary = await fetchJSON('/summary');
+        setText('obs', summary.total_observed);
+        setText('exe', summary.total_executed);
+        setText('suc', summary.success);
+        setText('fail', summary.failed);
+        setText('skip', summary.skipped);
+      } catch (e) { console.error(e); }
+      try {
+        const trades = await fetchJSON('/trades?limit=20');
+        const tbody = document.getElementById('trades');
+        tbody.innerHTML = trades.map(t => row([
+          t.id, t.chain,
+          `<code class='px-1 py-0.5 rounded bg-slate-800/60 text-slate-100'>${t.wallet}</code>`,
+          `<code class='px-1 py-0.5 rounded bg-slate-800/60 text-slate-100'>${t.tx_hash}</code>`,
+          t.token_in ?? '', t.token_out ?? '', t.amount_in_wei ?? '', t.min_out_wei ?? ''
+        ])).join('');
+      } catch (e) { console.error(e); }
+      try {
+        const execs = await fetchJSON('/executions?limit=20');
+        const tbody = document.getElementById('execs');
+        tbody.innerHTML = execs.map(x => row([
+          x.id, x.observed_trade_id,
+          `<span class='px-2 py-0.5 rounded text-xs ${x.status==='success'?'bg-emerald-600/30 text-emerald-200':(x.status==='failed'?'bg-rose-600/30 text-rose-200':'bg-slate-600/30 text-slate-200') }'>${x.status}</span>`,
+          x.tx_hash ?? '', x.error ?? ''
+        ])).join('');
+      } catch (e) { console.error(e); }
+    }
+    window.addEventListener('load', load);
+  </script>
+  </head>
+<body class="bg-slate-900 text-slate-100">
+  <header class="border-b border-slate-800/80 bg-slate-900/80 backdrop-blur sticky top-0">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <h1 class="text-xl font-semibold">Trade Clone Engine</h1>
+      <nav class="text-sm text-slate-300">API: <a class="text-brand hover:underline" href="/docs">/docs</a></nav>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 space-y-6">
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="rounded-lg border border-slate-800 bg-slate-800/40 p-4"><div class="text-slate-400 text-xs">Observed</div><div id="obs" class="text-2xl font-semibold">-</div></div>
+      <div class="rounded-lg border border-slate-800 bg-slate-800/40 p-4"><div class="text-slate-400 text-xs">Executed</div><div id="exe" class="text-2xl font-semibold">-</div></div>
+      <div class="rounded-lg border border-slate-800 bg-slate-800/40 p-4"><div class="text-slate-400 text-xs">Success</div><div id="suc" class="text-2xl font-semibold">-</div></div>
+      <div class="rounded-lg border border-slate-800 bg-slate-800/40 p-4"><div class="text-slate-400 text-xs">Failed / Skipped</div><div class="text-2xl font-semibold"><span id="fail">-</span> / <span id="skip">-</span></div></div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-800/40">
+      <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="font-medium">Observed trades</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-800/60 text-slate-300">
+            <tr>
+              <th class="px-4 py-2 text-left">ID</th>
+              <th class="px-4 py-2 text-left">Chain</th>
+              <th class="px-4 py-2 text-left">Wallet</th>
+              <th class="px-4 py-2 text-left">Tx</th>
+              <th class="px-4 py-2 text-left">In</th>
+              <th class="px-4 py-2 text-left">Out</th>
+              <th class="px-4 py-2 text-left">Amt In</th>
+              <th class="px-4 py-2 text-left">Min Out</th>
+            </tr>
+          </thead>
+          <tbody id="trades" class="divide-y divide-slate-800/80"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-800/40">
+      <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="font-medium">Executions</h3>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-800/60 text-slate-300">
+            <tr>
+              <th class="px-4 py-2 text-left">ID</th>
+              <th class="px-4 py-2 text-left">Observed</th>
+              <th class="px-4 py-2 text-left">Status</th>
+              <th class="px-4 py-2 text-left">Tx</th>
+              <th class="px-4 py-2 text-left">Error</th>
+            </tr>
+          </thead>
+          <tbody id="execs" class="divide-y divide-slate-800/80"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,134 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tce_postgres
+    environment:
+      POSTGRES_USER: tce
+      POSTGRES_PASSWORD: tce
+      POSTGRES_DB: tce
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tce"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  watcher:
+    build:
+      context: .
+      dockerfile: services/watcher/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  watcher_polygon:
+    build:
+      context: .
+      dockerfile: services/watcher/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - TCE_EVM_CHAIN_ID=137
+      - TCE_EVM_RPC_WS_URL=${TCE_POLYGON_EVM_RPC_WS_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: ["polygon"]
+
+  executor:
+    build:
+      context: .
+      dockerfile: services/executor/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  executor_polygon:
+    build:
+      context: .
+      dockerfile: services/executor/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - TCE_EVM_CHAIN_ID=137
+      - TCE_EVM_RPC_WS_URL=${TCE_POLYGON_EVM_RPC_WS_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: ["polygon"]
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - TCE_RUN_MIGRATIONS=true
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  discover:
+    build:
+      context: .
+      dockerfile: services/discover/Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  solana_watcher:
+    build:
+      context: .
+      dockerfile: services/solana_watcher/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: ["polling"]
+
+  solana_executor:
+    build:
+      context: .
+      dockerfile: services/solana_executor/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  solana_watcher_subscribe:
+    build:
+      context: .
+      dockerfile: services/solana_watcher_subscribe/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:
