@@ -50,7 +50,7 @@ def run_discovery_once(settings: AppSettings):
     if settings.__dict__.get("nansen_api_key"):
         nansen = NansenSource(
             api_key=settings.__dict__["nansen_api_key"],
-            base_url=(settings.__dict__.get("nansen_base_url") or "https://api.nansen.ai"),
+            base_url=(settings.__dict__.get("nansen_base_url") or "https://api.nansen.ai/api/v1"),
             endpoint_path=(
                 settings.__dict__.get("nansen_endpoint_path")
                 or "smart-money/top-traders?timeRange=7d"

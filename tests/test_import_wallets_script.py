@@ -1,9 +1,13 @@
-from importlib.machinery import SourceFileLoader
+import importlib.util
 from pathlib import Path
 
 
 def load_module(path: Path):
-    return SourceFileLoader("import_wallets", str(path)).load_module()  # type: ignore[deprecated]
+    spec = importlib.util.spec_from_file_location("import_wallets", str(path))
+    assert spec and spec.loader, "Failed to load module spec"
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)  # type: ignore[assignment]
+    return mod
 
 
 def test_import_wallets_parse_and_upsert(tmp_path):

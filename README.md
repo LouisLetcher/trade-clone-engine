@@ -23,19 +23,19 @@ Important: This repository is for educational purposes only. Nothing here is fin
 cp .env.example .env
 ```
 
-2. Configure wallets to follow in `config/wallets.yaml` (gitignored). Start from the example:
+1. Configure wallets to follow in `config/wallets.yaml` (gitignored). Start from the example:
 
 ```sh
 cp config/wallets.example.yaml config/wallets.yaml
 ```
 
-3. Build and start services:
+1. Build and start services:
 
 ```sh
 docker compose up --build
 ```
 
-4. API available at `http://localhost:8000` with endpoints: `/health`, `/trades`, `/executions`, `/summary`. A simple dashboard is also available at `/dashboard`.
+1. API available at `http://localhost:8000` with endpoints: `/health`, `/trades`, `/executions`, `/summary`. A simple dashboard is also available at `/dashboard`.
    DB migrations run automatically in each service container via Alembic. To avoid race conditions, only one service should run migrations; this repo sets `TCE_RUN_MIGRATIONS=true` on the `api` service.
 
 ## Configuration
@@ -59,7 +59,7 @@ Environment variables (prefixed `TCE_`):
 
 Wallets live in `config/wallets.yaml`:
 
-```
+```yaml
 wallets:
   - chain: evm
     address: "0x..."
@@ -103,7 +103,6 @@ Below are the pre-configured router addresses per chain (you can extend in `trad
   - SushiSwap V2: `0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506`
 - Base (8453):
   - Uniswap V3: `0x2626664c2603336E57B271c5C0b26F421741e481`
-
 
 ## Clean Code & Structure
 
@@ -150,8 +149,8 @@ Add Solana wallets in `config/wallets.yaml` with `chain: solana` and the address
 
 - Sources: Nansen (requires `TCE_NANSEN_API_KEY`), GMGN (best-effort), Birdeye (set `TCE_BIRDEYE_API_KEY`).
 - Configure:
-  - `TCE_NANSEN_BASE_URL` (e.g., `https://api.nansen.ai` or `https://api.nansen.ai/ra`)
-  - `TCE_NANSEN_ENDPOINT_PATH` (e.g., `smart-money/top-traders?timeRange=7d` or `smart-money/dex-trades?timeRange=24h&chain=solana`)
+  - `TCE_NANSEN_BASE_URL` (e.g., `https://api.nansen.ai/api/v1`)
+  - `TCE_NANSEN_ENDPOINT_PATH` (e.g., `smart-money/top-traders?timeRange=7d` or `smart-money/dex-trades?timeRange=24h`)
   - `TCE_DISCOVER_CHAIN` to limit to one chain (e.g., `solana`)
   - `TCE_DISCOVER_INTERVAL_SEC` for schedule, or set `TCE_DISCOVER_ONCE=true` to run once
   - `TCE_DISCOVER_PRUNE_OTHERS=true` to prune non-target chains in `wallets.yaml`

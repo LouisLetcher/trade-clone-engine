@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Any
 
@@ -150,9 +151,8 @@ class NansenSource:
         def walk(x: Any):
             if isinstance(x, dict):
                 for k, v in x.items():
-                    if k in address_like_keys and isinstance(v, str):
-                        if is_evm(v) or is_solana(v):
-                            addrs.add(v)
+                    if k in address_like_keys and isinstance(v, str) and (is_evm(v) or is_solana(v)):
+                        addrs.add(v)
                     walk(v)
             elif isinstance(x, list):
                 for it in x:
@@ -162,12 +162,43 @@ class NansenSource:
         return list(addrs)
 
     def top_wallets(self, limit: int = 100) -> list[WalletRec]:
-        headers = {"Authorization": f"Bearer {self.api_key}", "accept": "application/json"}
+        headers = {
+            "accept": "application/json",
+            "NANSEN-API-KEY": self.api_key,
+            "Authorization": f"Bearer {self.api_key}",
+            "apiKey": self.api_key,
+        }
         try:
-            base = (self.base_url or "https://api.nansen.ai").rstrip("/")
+            base = (self.base_url or "https://api.nansen.ai/api/v1").rstrip("/")
             path = (self.endpoint_path or "smart-money/top-traders").lstrip("/")
             url = f"{base}/{path}"
-            r = requests.get(url, headers=headers, timeout=20)
+
+            # Use POST for Smart Money endpoints that require a request body
+            if path.startswith("smart-money/dex-trades") or path.startswith("smart-money/dcas"):
+                discover_chain = (os.getenv("TCE_DISCOVER_CHAIN") or "").strip().lower()
+                chains_env = (os.getenv("TCE_NANSEN_SM_CHAINS") or "").strip()
+                if chains_env:
+                    chains = [c.strip() for c in chains_env.split(",") if c.strip()]
+                elif discover_chain == "solana":
+                    chains = ["solana"]
+                else:
+                    chains = ["ethereum"]
+                include_labels = [x.strip() for x in (os.getenv("TCE_DISCOVER_ALLOWED_LABELS") or "").split(",") if x.strip()]
+                exclude_labels = [x.strip() for x in (os.getenv("TCE_DISCOVER_DENIED_LABELS") or "").split(",") if x.strip()]
+                per_page = int(os.getenv("TCE_NANSEN_PER_PAGE") or 50)
+                body: dict[str, Any] = {"pagination": {"page": 1, "per_page": per_page}}
+                if path.startswith("smart-money/dex-trades"):
+                    body["chains"] = chains
+                filters: dict[str, Any] = {}
+                if include_labels:
+                    filters["include_smart_money_labels"] = include_labels
+                if exclude_labels:
+                    filters["exclude_smart_money_labels"] = exclude_labels
+                if filters:
+                    body["filters"] = filters
+                r = requests.post(url, headers=headers, json=body, timeout=30)
+            else:
+                r = requests.get(url, headers=headers, timeout=20)
             if not r.ok:
                 logger.warning("Nansen error: {} => {}", url, r.text)
                 return []
@@ -178,9 +209,15 @@ class NansenSource:
             rows = payload.get("data") or payload.get("items") or payload.get("results") or []
             if isinstance(rows, list) and rows:
                 for row in rows:
-                    # Flexible field extraction
-                    raw = (row.get("address") or row.get("walletAddress") or row.get("wallet") or "")
-                    addr = (raw.lower() if isinstance(raw, str) and raw.startswith("0x") else raw)
+                    # Flexible field extraction (supports dex-trades/dcas via trader_address)
+                    raw = (
+                        row.get("trader_address")
+                        or row.get("address")
+                        or row.get("walletAddress")
+                        or row.get("wallet")
+                        or ""
+                    )
+                    addr = raw.lower() if isinstance(raw, str) and raw.startswith("0x") else raw
                     if not addr:
                         continue
                     labels = []
@@ -195,7 +232,10 @@ class NansenSource:
                     pnl = row.get("pnl_usd") or row.get("pnlUsd") or row.get("realizedPnlUsd") or 0.0
                     win = row.get("win_rate") or row.get("winRate") or 0.0
                     trades = row.get("trades") or row.get("tradeCount") or 0
-                    chain = (row.get("chain") or ("evm" if isinstance(addr, str) and addr.startswith("0x") else "solana"))
+                    chain = (
+                        row.get("chain")
+                        or ("evm" if isinstance(addr, str) and addr.startswith("0x") else "solana")
+                    )
                     out.append(
                         {
                             "address": addr,

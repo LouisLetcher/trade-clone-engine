@@ -313,10 +313,10 @@ class EvmExecutor:
                                                 ):
                                                     topic_to = lg["topics"][2].hex()
                                                     addr = "0x" + topic_to[-40:]
-                                                        if addr.lower() == to_addr:
-                                                            val = int(lg.get("data", "0x0"), 16)
-                                                            amount_out_est = val
-                                                            break
+                                                    if addr.lower() == to_addr:
+                                                        val = int(lg.get("data", "0x0"), 16)
+                                                        amount_out_est = val
+                                                        break
                                         else:
                                             # Native out (ETH) via WETH Withdrawal event to our address
                                             wrapped = self.settings.dex_routers.native_wrapped.get(self.settings.evm_chain_id)
@@ -332,10 +332,10 @@ class EvmExecutor:
                                                 ):
                                                     topic_src = lg["topics"][1].hex()
                                                     src = "0x" + topic_src[-40:]
-                                                            if src.lower() == to_addr:
-                                                                val = int(lg.get("data", "0x0"), 16)
-                                                                amount_out_est = val
-                                                                break
+                                                    if src.lower() == to_addr:
+                                                        val = int(lg.get("data", "0x0"), 16)
+                                                        amount_out_est = val
+                                                        break
                                             # Fallback via balance delta
                                             if amount_out_est is None and (self.wallet.address):
                                                 try:
@@ -478,10 +478,10 @@ class EvmExecutor:
                                                 ):
                                                     topic_to = lg["topics"][2].hex()
                                                     addr = "0x" + topic_to[-40:]
-                                                        if addr.lower() == to_addr:
-                                                            val = int(lg.get("data", "0x0"), 16)
-                                                            amount_out_est = val
-                                                            break
+                                                    if addr.lower() == to_addr:
+                                                        val = int(lg.get("data", "0x0"), 16)
+                                                        amount_out_est = val
+                                                        break
                                         else:
                                             wrapped = self.settings.dex_routers.native_wrapped.get(self.settings.evm_chain_id)
                                             if wrapped:
@@ -496,10 +496,10 @@ class EvmExecutor:
                                                 ):
                                                     topic_src = lg["topics"][1].hex()
                                                     src = "0x" + topic_src[-40:]
-                                                            if src.lower() == to_addr:
-                                                                val = int(lg.get("data", "0x0"), 16)
-                                                                amount_out_est = val
-                                                                break
+                                                    if src.lower() == to_addr:
+                                                        val = int(lg.get("data", "0x0"), 16)
+                                                        amount_out_est = val
+                                                        break
                                             # Fallback via balance delta
                                             if amount_out_est is None and (self.wallet.address):
                                                 try:
