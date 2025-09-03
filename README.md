@@ -2,7 +2,7 @@
 
 Modular copy-trading engine to follow configured wallets, detect their DEX swaps on EVM chains, and (optionally) mirror those trades. Built with Python, FastAPI, SQLAlchemy, and Web3. Docker Compose makes it easy to deploy to cloud.
 
-Important: This repository defaults to dry-run execution. Copy-trading carries significant financial and technical risk. Use at your own risk.
+Important: This repository is for educational purposes only. Nothing here is financial advice. The project defaults to dry-run execution. Copy-trading carries significant financial and technical risk. Use at your own risk.
 
 ## Features
 
