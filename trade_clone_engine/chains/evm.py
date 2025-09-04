@@ -24,11 +24,19 @@ class EvmWatcher:
     @classmethod
     def create(cls, settings: AppSettings) -> EvmWatcher:
         w3 = Web3(Web3.WebsocketProvider(settings.evm_rpc_ws_url))
-        logger.info("Connected to EVM provider: {} (chain id {})", settings.evm_rpc_ws_url, settings.evm_chain_id)
+        logger.info(
+            "Connected to EVM provider: {} (chain id {})",
+            settings.evm_rpc_ws_url,
+            settings.evm_chain_id,
+        )
 
         # Prepare router ABIs for decoding only (address may vary)
-        v2_abi = json.loads((Path(__file__).resolve().parent.parent / "abi" / "uniswap_v2_router.json").read_text())
-        v3_abi = json.loads((Path(__file__).resolve().parent.parent / "abi" / "uniswap_v3_router.json").read_text())
+        v2_abi = json.loads(
+            (Path(__file__).resolve().parent.parent / "abi" / "uniswap_v2_router.json").read_text()
+        )
+        v3_abi = json.loads(
+            (Path(__file__).resolve().parent.parent / "abi" / "uniswap_v3_router.json").read_text()
+        )
 
         # We will create contract instances lazily using tx.to address
         dummy_addr = "0x0000000000000000000000000000000000000000"
@@ -40,7 +48,10 @@ class EvmWatcher:
         if not address:
             return False
         addr = Web3.to_checksum_address(address)
-        candidates = [Web3.to_checksum_address(a) for a in self.settings.dex_routers.evm.get(self.settings.evm_chain_id, [])]
+        candidates = [
+            Web3.to_checksum_address(a)
+            for a in self.settings.dex_routers.evm.get(self.settings.evm_chain_id, [])
+        ]
         return addr in candidates
 
     def decode_method(self, to_addr: str, input_data: bytes) -> tuple[str | None, dict | None]:
@@ -105,19 +116,41 @@ class EvmWatcher:
 
                             if params:
                                 # V2 path-based
-                                if isinstance(params.get("path"), list | tuple) and params.get("path"):
+                                if isinstance(params.get("path"), list | tuple) and params.get(
+                                    "path"
+                                ):
                                     token_in = str(params.get("path")[0])
                                     token_out = str(params.get("path")[-1])
                                 # V3 exactInputSingle tuple
                                 if isinstance(params.get("params"), dict):
                                     p = params.get("params")
-                                    token_in = str(p.get("tokenIn")) if p.get("tokenIn") else token_in
-                                    token_out = str(p.get("tokenOut")) if p.get("tokenOut") else token_out
-                                    amount_in = str(p.get("amountIn")) if p.get("amountIn") is not None else amount_in
-                                    min_out = str(p.get("amountOutMinimum")) if p.get("amountOutMinimum") is not None else min_out
+                                    token_in = (
+                                        str(p.get("tokenIn")) if p.get("tokenIn") else token_in
+                                    )
+                                    token_out = (
+                                        str(p.get("tokenOut")) if p.get("tokenOut") else token_out
+                                    )
+                                    amount_in = (
+                                        str(p.get("amountIn"))
+                                        if p.get("amountIn") is not None
+                                        else amount_in
+                                    )
+                                    min_out = (
+                                        str(p.get("amountOutMinimum"))
+                                        if p.get("amountOutMinimum") is not None
+                                        else min_out
+                                    )
 
-                                amount_in = str(params.get("amountIn")) if amount_in is None and params.get("amountIn") is not None else amount_in
-                                min_out = str(params.get("amountOutMin")) if min_out is None and params.get("amountOutMin") is not None else min_out
+                                amount_in = (
+                                    str(params.get("amountIn"))
+                                    if amount_in is None and params.get("amountIn") is not None
+                                    else amount_in
+                                )
+                                min_out = (
+                                    str(params.get("amountOutMin"))
+                                    if min_out is None and params.get("amountOutMin") is not None
+                                    else min_out
+                                )
 
                             if amount_in is None:
                                 amount_in = str(tx.get("value")) if tx.get("value") else None
@@ -125,7 +158,9 @@ class EvmWatcher:
                             with session_scope(SessionFactory) as s:
                                 rec = ObservedTrade(
                                     chain="evm",
-                                    tx_hash=tx["hash"].hex() if hasattr(tx["hash"], "hex") else str(tx["hash"]),
+                                    tx_hash=tx["hash"].hex()
+                                    if hasattr(tx["hash"], "hex")
+                                    else str(tx["hash"]),
                                     block_number=bn,
                                     wallet=from_addr,
                                     dex=to_addr,
@@ -134,10 +169,19 @@ class EvmWatcher:
                                     token_out=token_out,
                                     amount_in_wei=amount_in,
                                     min_out_wei=min_out,
-                                    raw_input=input_data if isinstance(input_data, str) else input_data.hex(),
+                                    raw_input=input_data
+                                    if isinstance(input_data, str)
+                                    else input_data.hex(),
                                 )
                                 s.add(rec)
-                            logger.info("Observed trade: {} {} {} -> {} (method: {})", rec.wallet, rec.dex, rec.token_in, rec.token_out, rec.method)
+                            logger.info(
+                                "Observed trade: {} {} {} -> {} (method: {})",
+                                rec.wallet,
+                                rec.dex,
+                                rec.token_in,
+                                rec.token_out,
+                                rec.method,
+                            )
 
                 last_block = latest
             except KeyboardInterrupt:
