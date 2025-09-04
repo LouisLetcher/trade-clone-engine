@@ -56,6 +56,11 @@ class AppSettings(BaseSettings):
     jupiter_quote_url: str = "https://quote-api.jup.ag/v6/quote"
     jupiter_swap_url: str = "https://quote-api.jup.ag/v6/swap"
     sol_subscribe_logs: bool = False
+    sol_subscribe_all: bool = (
+        False  # if true, subscribe to all logs and filter locally (best-effort)
+    )
+    sol_backfill_pages: int = 0  # number of pages to backfill on startup (polling watcher)
+    sol_backfill_limit: int = 100  # signatures per page during backfill
 
     # Execution
     dry_run: bool = True
@@ -77,6 +82,9 @@ class AppSettings(BaseSettings):
     zeroex_base_url_polygon: str = "https://polygon.api.0x.org"
     zeroex_base_url_arbitrum: str = "https://arbitrum.api.0x.org"
     zeroex_base_url_optimism: str = "https://optimism.api.0x.org"
+
+    # Discovery feature toggles
+    enable_gmgn: bool = False
 
     # Discovery
     dune_api_key: str | None = None

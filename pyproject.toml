@@ -28,11 +28,15 @@ dependencies = [
   "solana>=0.30.2",
   "solders>=0.18.1",
   "base58>=2.1.1"
+  ,"websockets<14"
 ]
 
 [tool.pytest.ini_options]
 addopts = "-q --cov=trade_clone_engine --cov-report=term-missing"
 testpaths = ["tests"]
+filterwarnings = [
+  "ignore:websockets\\.legacy is deprecated:DeprecationWarning",
+]
 
 [tool.coverage.run]
 branch = true

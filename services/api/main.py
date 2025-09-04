@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 
 from trade_clone_engine.analytics.metrics import get_summary
+from trade_clone_engine.chains.solana_watcher import SolanaWatcher
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import ExecutedTrade, ObservedTrade, make_session_factory
 
@@ -137,3 +138,12 @@ def pnl_summary():
             "total_pnl_usd": float(total or 0.0),
             "by_wallet": {w: float(v or 0.0) for w, v in rows},
         }
+
+
+@app.post("/backfill/solana")
+def backfill_solana(pages: int = 3, limit: int = 100):
+    pages = max(1, int(pages))
+    limit = max(1, int(limit))
+    watcher = SolanaWatcher.create(settings)
+    inserted = watcher.backfill(SessionFactory, pages=pages, limit=limit)
+    return {"inserted": inserted, "pages": pages, "limit": limit}
