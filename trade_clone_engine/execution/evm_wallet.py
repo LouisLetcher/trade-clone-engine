@@ -29,11 +29,20 @@ class EvmWallet:
     def create(
         cls, rpc_url: str, chain_id: int, private_key: str | None, explicit_address: str | None
     ):
-        w3 = Web3(
-            Web3.WebsocketProvider(rpc_url)
-            if rpc_url.startswith("ws")
-            else Web3(Web3.HTTPProvider(rpc_url))
-        )
+        if rpc_url.startswith("ws"):
+            wsprov = getattr(Web3, "WebsocketProvider", None)
+            if wsprov is None:
+                raise RuntimeError(
+                    "WebsocketProvider not available in this web3 build. Use an HTTP RPC URL or install web3 with WS support."
+                )
+            w3 = Web3(wsprov(rpc_url))
+        else:
+            hpprov = getattr(Web3, "HTTPProvider", None)
+            if hpprov is None:
+                from web3.providers.rpc import HTTPProvider as _HTTPProvider  # type: ignore
+
+                hpprov = _HTTPProvider
+            w3 = Web3(hpprov(rpc_url))
         addr = explicit_address
         if private_key and not addr:
             addr = Account.from_key(private_key).address

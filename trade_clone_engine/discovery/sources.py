@@ -52,31 +52,83 @@ class BirdeyeSource:
     base_url: str = "https://public-api.birdeye.so"
 
     def top_wallets(self, limit: int = 100) -> list[WalletRec]:
-        # Placeholder: Birdeye may not expose direct top traders; this is a scaffold.
+        """Use Trader - Gainers/Losers to discover active traders on Solana.
+
+        API docs: https://docs.birdeye.so/reference/get-trader-gainers-losers
+        Endpoint: GET /trader/gainers-losers
+        Headers:
+          - x-chain: solana | <other supported chains>
+          - x-api-key: <key>
+        Query params:
+          - type: yesterday|today|1W (default: 1W)
+          - sort_by: PnL (default)
+          - sort_type: desc|asc (default: desc)
+          - offset, limit (Birdeye limit max 10)
+        """
         headers = {"x-api-key": self.api_key, "accept": "application/json"}
-        url = f"{self.base_url}/defi/wallet/ranking"
+        chain = (os.getenv("TCE_BIRDEYE_CHAIN") or "solana").strip().lower()
+        headers["x-chain"] = chain
+
+        typ = (os.getenv("TCE_BIRDEYE_TRADER_TYPE") or "1W").strip()
+        sort_by = (os.getenv("TCE_BIRDEYE_SORT_BY") or "PnL").strip()
+        sort_type = (os.getenv("TCE_BIRDEYE_SORT_TYPE") or "desc").strip()
+        # Birdeye caps limit at 10 per request; we will page offsets until we gather `limit` items
+        per_request = max(1, min(10, int(os.getenv("TCE_BIRDEYE_LIMIT") or 10)))
+        # Optional total cap from env to avoid rate-limits regardless of caller-provided limit
         try:
-            r = requests.get(url, headers=headers, timeout=20)
-            if not r.ok:
-                logger.warning("Birdeye error: {}", r.text)
-                return []
-            rows = r.json().get("data", [])
+            total_cap = int(os.getenv("TCE_BIRDEYE_TOTAL_LIMIT") or 0)
+            total_cap = total_cap if total_cap > 0 else limit
+        except Exception:
+            total_cap = limit
+        target = min(limit, total_cap)
+        url = f"{self.base_url.rstrip('/')}/trader/gainers-losers"
+        try:
             out: list[WalletRec] = []
-            for row in rows[:limit]:
-                raw = row.get("address") or ""
-                addr = raw.lower() if raw.startswith("0x") else raw
-                if not addr:
-                    continue
-                out.append(
-                    {
-                        "address": addr,
-                        "chain": "solana",
-                        "pnl_usd": float(row.get("pnl_usd") or 0.0),
-                        "win_rate": float(row.get("win_rate") or 0.0),
-                        "trades": int(row.get("trades") or 0),
-                    }
+            offset = 0
+            while len(out) < target and offset < 10000:
+                req_limit = min(per_request, target - len(out))
+                params = {
+                    "type": typ,
+                    "sort_by": sort_by,
+                    "sort_type": sort_type,
+                    "offset": offset,
+                    "limit": req_limit,
+                }
+                r = requests.get(url, headers=headers, params=params, timeout=20)
+                if not r.ok:
+                    logger.warning("Birdeye error ({}): {}", r.status_code, url)
+                    break
+                payload = r.json() or {}
+                data = payload.get("data") or {}
+                rows = (
+                    data.get("items")
+                    or data.get("data")
+                    or (payload if isinstance(payload, list) else [])
                 )
-            return out
+                if not rows:
+                    break
+                for row in rows:
+                    raw = (
+                        row.get("address")
+                        or row.get("walletAddress")
+                        or row.get("wallet")
+                        or row.get("trader")
+                        or ""
+                    )
+                    addr = raw.lower() if raw.startswith("0x") else raw
+                    if not addr:
+                        continue
+                    out.append(
+                        {
+                            "address": addr,
+                            "chain": chain,
+                            "pnl_usd": float(row.get("pnl_usd") or row.get("pnlUsd") or 0.0),
+                            "win_rate": float(row.get("win_rate") or row.get("winRate") or 0.0),
+                            "trades": int(row.get("trades") or row.get("tradeCount") or 0),
+                        }
+                    )
+                offset += req_limit
+            return out[:target]
         except Exception as e:
             logger.warning("Birdeye request failed: {}", e)
             return []
@@ -90,9 +142,10 @@ class GMGNSource:
     def top_wallets(self, limit: int = 100) -> list[WalletRec]:
         # Placeholder implementation; endpoint depends on GMGN plan.
         try:
-            r = requests.get(f"{self.base_url}/solana/traders/top", timeout=20)
+            url = f"{self.base_url}/solana/traders/top"
+            r = requests.get(url, timeout=20)
             if not r.ok:
-                logger.warning("GMGN error: {}", r.text)
+                logger.warning("GMGN error ({}): {}", r.status_code, url)
                 return []
             rows = r.json().get("data", [])
             out: list[WalletRec] = []

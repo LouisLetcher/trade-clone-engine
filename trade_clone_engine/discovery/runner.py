@@ -51,7 +51,7 @@ def run_discovery_once(settings: AppSettings):
     birdeye = None
     if settings.__dict__.get("birdeye_api_key"):
         birdeye = BirdeyeSource(api_key=settings.__dict__["birdeye_api_key"])
-    gmgn = GMGNSource()
+    gmgn = GMGNSource() if settings.__dict__.get("enable_gmgn") else None
     nansen = None
     if settings.__dict__.get("nansen_api_key"):
         nansen = NansenSource(
@@ -68,8 +68,9 @@ def run_discovery_once(settings: AppSettings):
         candidates.extend(dune.top_wallets(limit=500))
     if birdeye:
         candidates.extend(birdeye.top_wallets(limit=500))
-    # GMGN is optional/public; may fail if rate-limited
-    candidates.extend(gmgn.top_wallets(limit=200))
+    # GMGN is optional/public; disabled by default due to Cloudflare
+    if gmgn:
+        candidates.extend(gmgn.top_wallets(limit=200))
     if nansen:
         candidates.extend(nansen.top_wallets(limit=500))
 

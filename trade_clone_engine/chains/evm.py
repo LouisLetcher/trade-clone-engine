@@ -23,7 +23,23 @@ class EvmWatcher:
 
     @classmethod
     def create(cls, settings: AppSettings) -> EvmWatcher:
-        w3 = Web3(Web3.WebsocketProvider(settings.evm_rpc_ws_url))
+        url = settings.evm_rpc_ws_url
+        # Build provider compatibly across web3 versions
+        if str(url).startswith("ws"):
+            wsprov = getattr(Web3, "WebsocketProvider", None)
+            if wsprov is None:
+                raise RuntimeError(
+                    "WebsocketProvider not available in this web3 build. Use an HTTP RPC URL or install web3 with WS support."
+                )
+            w3 = Web3(wsprov(url))
+        else:
+            hpprov = getattr(Web3, "HTTPProvider", None)
+            if hpprov is None:
+                # Fallback import path for some versions
+                from web3.providers.rpc import HTTPProvider as _HTTPProvider  # type: ignore
+
+                hpprov = _HTTPProvider
+            w3 = Web3(hpprov(url))
         logger.info(
             "Connected to EVM provider: {} (chain id {})",
             settings.evm_rpc_ws_url,
