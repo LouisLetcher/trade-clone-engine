@@ -24,7 +24,9 @@ jobs:
         run: |
           pip install ruff
           ruff --version
-          ruff .
+          # Check formatting and lint with GitHub-friendly output
+          ruff format --check .
+          ruff check . --output-format=github
       - name: Run tests with coverage
         run: |
           pytest -q --cov=trade_clone_engine --cov-report=term-missing --cov-report=xml

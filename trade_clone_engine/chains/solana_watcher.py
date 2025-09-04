@@ -98,7 +98,9 @@ class SolanaWatcher:
         if not wallets:
             logger.warning("No Solana wallets configured; subscription aborted.")
             return
-        async with ws_connect(self.settings.sol_rpc_url.replace("https://", "wss://").replace("http://", "ws://")) as websocket:
+        async with ws_connect(
+            self.settings.sol_rpc_url.replace("https://", "wss://").replace("http://", "ws://")
+        ) as websocket:
             # Subscribe once per wallet using solders Mentions filter (expects a single Pubkey)
             subs = []
             errors = []
@@ -130,8 +132,10 @@ class SolanaWatcher:
                     if not sig:
                         continue
                     # Filter to our wallets if mentions are present
-                    if value.get("mentions") and wallets and not any(
-                        m in wallets for m in (value.get("mentions") or [])
+                    if (
+                        value.get("mentions")
+                        and wallets
+                        and not any(m in wallets for m in (value.get("mentions") or []))
                     ):
                         continue
                     txr = self.client.get_transaction(sig, max_supported_transaction_version=0)

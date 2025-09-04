@@ -29,7 +29,10 @@ def save_wallets_yaml(path: Path, data: dict) -> None:
 
 def upsert_wallet(wallets: list[dict], item: dict) -> None:
     for w in wallets:
-        if w.get("address", "").lower() == item.get("address", "").lower() and (w.get("chain") or "evm").lower() == (item.get("chain") or "evm").lower():
+        if (
+            w.get("address", "").lower() == item.get("address", "").lower()
+            and (w.get("chain") or "evm").lower() == (item.get("chain") or "evm").lower()
+        ):
             # Update notes/overrides if present, keep existing risk unless missing
             for k, v in item.items():
                 if k not in ("address",) and v is not None and (k not in w or w[k] in (None, "")):
@@ -41,7 +44,10 @@ def upsert_wallet(wallets: list[dict], item: dict) -> None:
 def run_discovery_once(settings: AppSettings):
     dune = None
     if settings.__dict__.get("dune_api_key"):
-        dune = DuneSource(api_key=settings.__dict__["dune_api_key"], query_id=settings.__dict__.get("dune_query_id"))
+        dune = DuneSource(
+            api_key=settings.__dict__["dune_api_key"],
+            query_id=settings.__dict__.get("dune_query_id"),
+        )
     birdeye = None
     if settings.__dict__.get("birdeye_api_key"):
         birdeye = BirdeyeSource(api_key=settings.__dict__["birdeye_api_key"])
@@ -81,7 +87,11 @@ def run_discovery_once(settings: AppSettings):
 
     # Optional chain filter
     only_chain = (settings.__dict__.get("discover_chain") or "").strip().lower()
-    filtered = [w for w in candidates if label_ok(w) and (not only_chain or str(w.get("chain","")) == only_chain)]
+    filtered = [
+        w
+        for w in candidates
+        if label_ok(w) and (not only_chain or str(w.get("chain", "")) == only_chain)
+    ]
 
     top = rank_wallets(
         filtered,
@@ -110,7 +120,7 @@ def run_discovery_once(settings: AppSettings):
         item = {
             "chain": w.get("chain", "evm"),
             "address": w["address"],
-            "notes": f"discovered pnl=${w.get('pnl_usd', 0.0):.2f} win={w.get('win_rate',0.0):.2f}",
+            "notes": f"discovered pnl=${w.get('pnl_usd', 0.0):.2f} win={w.get('win_rate', 0.0):.2f}",
             "copy_ratio": default_copy_ratio,
             "slippage_bps": default_slippage_bps,
             "max_native_in_wei": default_max_native,

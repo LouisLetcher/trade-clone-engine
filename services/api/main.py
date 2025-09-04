@@ -70,7 +70,11 @@ def list_trades(limit: int = 50):
     from trade_clone_engine.db import session_scope
 
     with session_scope(SessionFactory) as s:
-        rows = s.execute(select(ObservedTrade).order_by(ObservedTrade.id.desc()).limit(limit)).scalars().all()
+        rows = (
+            s.execute(select(ObservedTrade).order_by(ObservedTrade.id.desc()).limit(limit))
+            .scalars()
+            .all()
+        )
         return [TradeOut.from_model(r).model_dump() for r in rows]
 
 
@@ -99,7 +103,11 @@ def list_executions(limit: int = 50):
     from trade_clone_engine.db import session_scope
 
     with session_scope(SessionFactory) as s:
-        rows = s.execute(select(ExecutedTrade).order_by(ExecutedTrade.id.desc()).limit(limit)).scalars().all()
+        rows = (
+            s.execute(select(ExecutedTrade).order_by(ExecutedTrade.id.desc()).limit(limit))
+            .scalars()
+            .all()
+        )
         return [ExecutionOut.from_model(r).model_dump() for r in rows]
 
 
@@ -115,17 +123,16 @@ def pnl_summary():
 
     with session_scope(SessionFactory) as s:
         total = s.scalar(
-            select(func.coalesce(func.sum(ExecutedTrade.pnl_usd), 0.0)).where(ExecutedTrade.status == "success")
-        )
-        rows = (
-            s.execute(
-                select(ObservedTrade.wallet, func.coalesce(func.sum(ExecutedTrade.pnl_usd), 0.0))
-                .join(ExecutedTrade, ExecutedTrade.observed_trade_id == ObservedTrade.id)
-                .where(ExecutedTrade.status == "success")
-                .group_by(ObservedTrade.wallet)
+            select(func.coalesce(func.sum(ExecutedTrade.pnl_usd), 0.0)).where(
+                ExecutedTrade.status == "success"
             )
-            .all()
         )
+        rows = s.execute(
+            select(ObservedTrade.wallet, func.coalesce(func.sum(ExecutedTrade.pnl_usd), 0.0))
+            .join(ExecutedTrade, ExecutedTrade.observed_trade_id == ObservedTrade.id)
+            .where(ExecutedTrade.status == "success")
+            .group_by(ObservedTrade.wallet)
+        ).all()
         return {
             "total_pnl_usd": float(total or 0.0),
             "by_wallet": {w: float(v or 0.0) for w, v in rows},

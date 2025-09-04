@@ -26,16 +26,16 @@ class DexRouters(BaseModel):
 
     # Uniswap V3 Quoter addresses per chain
     v3_quoters: dict[int, str] = {
-        1: "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",   # Ethereum
+        1: "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",  # Ethereum
         137: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",  # Polygon
-        8453: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e", # Base
+        8453: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",  # Base
     }
 
     # Wrapped native per chain (WETH)
     native_wrapped: dict[int, str] = {
-        1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",     # WETH9
-        137: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",   # WMATIC
-        8453: "0x4200000000000000000000000000000000000006",   # WETH (Base)
+        1: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  # WETH9
+        137: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",  # WMATIC
+        8453: "0x4200000000000000000000000000000000000006",  # WETH (Base)
     }
 
 
@@ -103,7 +103,9 @@ class AppSettings(BaseSettings):
     discover_denied_labels: str | None = None
     discover_chain: str | None = None  # limit discovery to a specific chain, e.g. 'solana' or 'evm'
     discover_once: bool = False  # if true, discovery service runs once and exits
-    discover_prune_others: bool = False  # if true and discover_chain set, prune wallets of other chains
+    discover_prune_others: bool = (
+        False  # if true and discover_chain set, prune wallets of other chains
+    )
 
     # Config files
     wallets_config: str = "config/wallets.yaml"
@@ -153,7 +155,7 @@ class AppSettings(BaseSettings):
         data = yaml.safe_load(path.read_text()) or {}
         out: dict[str, dict] = {}
         for item in data.get("wallets", []):
-            raw_addr = (item.get("address") or "")
+            raw_addr = item.get("address") or ""
             # Normalize EVM addresses to lowercase; keep Solana as-is
             addr = raw_addr.lower() if raw_addr.startswith("0x") else raw_addr
             if not addr:

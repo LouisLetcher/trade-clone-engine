@@ -30,7 +30,7 @@ class DuneSource:
         rows = data.get("result", {}).get("rows", [])
         out: list[WalletRec] = []
         for row in rows[:limit]:
-            raw = (row.get("wallet") or row.get("address") or "")
+            raw = row.get("wallet") or row.get("address") or ""
             addr = raw.lower() if raw.startswith("0x") else raw
             if not addr:
                 continue
@@ -63,7 +63,7 @@ class BirdeyeSource:
             rows = r.json().get("data", [])
             out: list[WalletRec] = []
             for row in rows[:limit]:
-                raw = (row.get("address") or "")
+                raw = row.get("address") or ""
                 addr = raw.lower() if raw.startswith("0x") else raw
                 if not addr:
                     continue
@@ -97,7 +97,7 @@ class GMGNSource:
             rows = r.json().get("data", [])
             out: list[WalletRec] = []
             for row in rows[:limit]:
-                raw = (row.get("address") or "")
+                raw = row.get("address") or ""
                 addr = raw.lower() if raw.startswith("0x") else raw
                 if not addr:
                     continue
@@ -151,7 +151,11 @@ class NansenSource:
         def walk(x: Any):
             if isinstance(x, dict):
                 for k, v in x.items():
-                    if k in address_like_keys and isinstance(v, str) and (is_evm(v) or is_solana(v)):
+                    if (
+                        k in address_like_keys
+                        and isinstance(v, str)
+                        and (is_evm(v) or is_solana(v))
+                    ):
                         addrs.add(v)
                     walk(v)
             elif isinstance(x, list):
@@ -183,8 +187,16 @@ class NansenSource:
                     chains = ["solana"]
                 else:
                     chains = ["ethereum"]
-                include_labels = [x.strip() for x in (os.getenv("TCE_DISCOVER_ALLOWED_LABELS") or "").split(",") if x.strip()]
-                exclude_labels = [x.strip() for x in (os.getenv("TCE_DISCOVER_DENIED_LABELS") or "").split(",") if x.strip()]
+                include_labels = [
+                    x.strip()
+                    for x in (os.getenv("TCE_DISCOVER_ALLOWED_LABELS") or "").split(",")
+                    if x.strip()
+                ]
+                exclude_labels = [
+                    x.strip()
+                    for x in (os.getenv("TCE_DISCOVER_DENIED_LABELS") or "").split(",")
+                    if x.strip()
+                ]
                 per_page = int(os.getenv("TCE_NANSEN_PER_PAGE") or 50)
                 body: dict[str, Any] = {"pagination": {"page": 1, "per_page": per_page}}
                 if path.startswith("smart-money/dex-trades"):
@@ -229,12 +241,13 @@ class NansenSource:
                             name = lab.get("name") or lab.get("label")
                             if name:
                                 labels.append(name)
-                    pnl = row.get("pnl_usd") or row.get("pnlUsd") or row.get("realizedPnlUsd") or 0.0
+                    pnl = (
+                        row.get("pnl_usd") or row.get("pnlUsd") or row.get("realizedPnlUsd") or 0.0
+                    )
                     win = row.get("win_rate") or row.get("winRate") or 0.0
                     trades = row.get("trades") or row.get("tradeCount") or 0
-                    chain = (
-                        row.get("chain")
-                        or ("evm" if isinstance(addr, str) and addr.startswith("0x") else "solana")
+                    chain = row.get("chain") or (
+                        "evm" if isinstance(addr, str) and addr.startswith("0x") else "solana"
                     )
                     out.append(
                         {
@@ -274,10 +287,14 @@ class NansenSource:
 # Arkham removed: no public API available yet for this purpose.
 
 
-def rank_wallets(candidates: list[WalletRec], min_trades: int = 10, top_percent: float = 1.0) -> list[WalletRec]:
+def rank_wallets(
+    candidates: list[WalletRec], min_trades: int = 10, top_percent: float = 1.0
+) -> list[WalletRec]:
     # Filter and rank by pnl_usd then win_rate
     filt = [w for w in candidates if int(w.get("trades", 0)) >= min_trades]
-    filt.sort(key=lambda w: (float(w.get("pnl_usd", 0.0)), float(w.get("win_rate", 0.0))), reverse=True)
+    filt.sort(
+        key=lambda w: (float(w.get("pnl_usd", 0.0)), float(w.get("win_rate", 0.0))), reverse=True
+    )
     if not filt:
         return []
     n = max(1, int(len(filt) * (top_percent / 100.0)))
