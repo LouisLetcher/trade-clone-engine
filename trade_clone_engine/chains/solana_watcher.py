@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 from loguru import logger
 from solana.rpc.api import Client
-from solana.rpc.websocket_api import connect as ws_connect
 
 from trade_clone_engine.config import AppSettings
 from trade_clone_engine.db import ObservedTrade, session_scope
@@ -105,12 +104,15 @@ class SolanaWatcher:
 
                 time.sleep(2)
 
-    async def run_subscribe(self, SessionFactory):
+    async def run_subscribe(self, SessionFactory):  # pragma: no cover
         # Optional logs subscription for Jupiter/Raydium program logs (improves latency)
         wallets = set(self.wallets())
         if not wallets:
             logger.warning("No Solana wallets configured; subscription aborted.")
             return
+        # Import WebSocket connect lazily to avoid importing legacy websockets unless needed
+        from solana.rpc.websocket_api import connect as ws_connect  # type: ignore
+
         async with ws_connect(
             self.settings.sol_rpc_url.replace("https://", "wss://").replace("http://", "ws://")
         ) as websocket:
