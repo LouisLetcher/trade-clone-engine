@@ -23,8 +23,14 @@ def test_nansen_dex_trades_post_body_and_parse(monkeypatch):
         captured["json"] = json or {}
         payload = {
             "data": [
-                {"trader_address": "9xQeWvG816bUx9EPm2Tbd2Ykqg3k9uADuZbL9g1z3Q2E", "chain": "solana"},
-                {"trader_address": "0xAbCdEf0123456789aBCdef0123456789AbCdEf01", "chain": "ethereum"},
+                {
+                    "trader_address": "9xQeWvG816bUx9EPm2Tbd2Ykqg3k9uADuZbL9g1z3Q2E",
+                    "chain": "solana",
+                },
+                {
+                    "trader_address": "0xAbCdEf0123456789aBCdef0123456789AbCdEf01",
+                    "chain": "ethereum",
+                },
             ],
             "pagination": {"page": 1, "per_page": 2, "is_last_page": True},
         }
@@ -51,8 +57,13 @@ def test_nansen_dex_trades_post_body_and_parse(monkeypatch):
     body = captured["json"]
     assert body["pagination"]["per_page"] == 77
     assert body.get("chains") == ["solana"]
-    assert set(body.get("filters", {}).get("include_smart_money_labels", [])) == {"Fund", "Smart Trader"}
-    assert set(body.get("filters", {}).get("exclude_smart_money_labels", [])) == {"30D Smart Trader"}
+    assert set(body.get("filters", {}).get("include_smart_money_labels", [])) == {
+        "Fund",
+        "Smart Trader",
+    }
+    assert set(body.get("filters", {}).get("exclude_smart_money_labels", [])) == {
+        "30D Smart Trader"
+    }
 
     # Verify parsing
     addrs = {w["address"] for w in out}

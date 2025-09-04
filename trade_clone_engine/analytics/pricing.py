@@ -8,7 +8,9 @@ CHAIN_TO_COINGECKO_PLATFORM = {
 }
 
 
-def get_token_price_usd(chain_id: int, token_address: str | None, native_symbol: str = "ETH") -> float | None:
+def get_token_price_usd(
+    chain_id: int, token_address: str | None, native_symbol: str = "ETH"
+) -> float | None:
     if not token_address:
         # Native coin
         if chain_id == 1:
@@ -17,7 +19,11 @@ def get_token_price_usd(chain_id: int, token_address: str | None, native_symbol:
             ids = "ethereum"  # Base native is ETH
         else:
             return None
-        r = requests.get("https://api.coingecko.com/api/v3/simple/price", params={"ids": ids, "vs_currencies": "usd"}, timeout=10)
+        r = requests.get(
+            "https://api.coingecko.com/api/v3/simple/price",
+            params={"ids": ids, "vs_currencies": "usd"},
+            timeout=10,
+        )
         if r.ok:
             return float(r.json().get(ids, {}).get("usd"))
         return None
